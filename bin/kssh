@@ -1,0 +1,9 @@
+#!/bin/sh
+if [ "$1" = "" ]; then
+  echo "Usage: kshell <pod>"
+  exit 1
+fi
+COLUMNS=`tput cols`
+LINES=`tput lines`
+TERM=xterm
+kubectl exec -i -t $@ env COLUMNS=$COLUMNS LINES=$LINES TERM=$TERM bash

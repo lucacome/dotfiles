@@ -1,0 +1,6 @@
+from wsgiref.handlers import CGIHandler
+import requests
+
+def application(environ,start_response):
+	requests.get("https://5.39.79.221/rutorrent/?secret=foo", verify=False)
+CGIHandler().run(application)
