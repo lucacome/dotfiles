@@ -48,7 +48,24 @@ ZSH_DISABLE_COMPFIX=true
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git macos brew docker thefuck golang gh zsh-autosuggestions kubectl history common-aliases zbell aws vscode gnu-utils)
+plugins=(
+	git
+	macos
+	brew
+	docker
+	thefuck
+	golang
+	gh
+	zsh-autosuggestions
+	zsh-syntax-highlighting
+	kubectl
+	history
+	common-aliases
+	zbell
+	aws
+	vscode
+	gnu-utils
+)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -109,5 +126,7 @@ export PATH="/opt/homebrew/bin:$PATH"
 export PATH="/opt/homebrew/opt/curl/bin:$PATH"
 export PATH="/opt/homebrew/opt/openssl@3/bin:$PATH"
 {{- end }}
+
+fpath+=${ZSH_CUSTOM:-${ZSH:-~/.oh-my-zsh}/custom}/plugins/zsh-completions/src
 
 {{- /* vim: set filetype=zsh: */}}
