@@ -1428,6 +1428,10 @@
 	<true/>
 	<key>IRMemory</key>
 	<integer>40</integer>
+	<key>NeverWarnAboutShortLivedSessions_B99C3409-DD62-44D8-81C3-F6C7B1D1191B</key>
+	<true/>
+	<key>NeverWarnAboutShortLivedSessions_B99C3409-DD62-44D8-81C3-F6C7B1D1191B_selection</key>
+	<integer>0</integer>
 	<key>New Bookmarks</key>
 	<array>
 		<dict>
@@ -2283,7 +2287,7 @@
 	<key>SavePasteHistory</key>
 	<true/>
 	<key>ShowFullScreenTabBar</key>
-	<false/>
+	<true/>
 	<key>SmartPlacement</key>
 	<true/>
 	<key>SoundForEsc</key>
