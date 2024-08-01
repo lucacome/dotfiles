@@ -49,22 +49,9 @@ ZSH_DISABLE_COMPFIX=true
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(
-	git
-	macos
-	brew
-	docker
-	thefuck
-	golang
-	gh
-	zsh-autosuggestions
-	zsh-syntax-highlighting
-	kubectl
-	history
-	common-aliases
-	zbell
-	aws
-	vscode
-	gnu-utils
+{{- range .zshPlugins }}
+  {{ . }}
+{{- end }}
 )
 
 source $ZSH/oh-my-zsh.sh
