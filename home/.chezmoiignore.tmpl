@@ -11,6 +11,7 @@
 {{ if ne .chezmoi.os "darwin" }}
 .chezmoiscripts/darwin/**
 .config/karabiner
+.config/homebrew
 .hammerspoon
 {{ end }}
 
@@ -26,7 +27,11 @@
 Documents
 {{ else }}
 .bash_aliases
+.config/ghostty
 .config/git/cookies
+.config/psql
+.config/readline
+.config/tmux
 .gnupg
 .gnupg/**
 .inputrc
@@ -41,6 +46,14 @@ Documents
 {{ end }}
 
 {{ if not .personal }}
+.config/ghostty
+.config/ghostty/**
+.config/psql
+.config/psql/**
+.hammerspoon
+.hammerspoon/**
 .pypirc
 .psqlrc
+.ssh
+.ssh/**
 {{ end }}
