@@ -23,7 +23,7 @@
   "shell_integration": true,
   "enable_cursor_positioning": true,
   "transient_prompt": {
-    "template": "❯ ",
+    "template": "{{ if .Root }}<p:red> # </>{{else}} ❯ {{end}}",
     "foreground": "#43D426",
     "background": "transparent"
   },
