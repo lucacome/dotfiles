@@ -143,10 +143,10 @@
           "style": "plain"
         },
         {
-          "background": "p:background",
           "foreground": "p:red",
           "style": "plain",
-          "type": "root"
+          "type": "root",
+          "template": "# "
         }
       ],
       "type": "prompt"
