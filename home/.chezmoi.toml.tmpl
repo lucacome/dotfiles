@@ -11,7 +11,7 @@
 {{- end -}}
 
 {{/* detect GitHub codespaces, VSCode remote containers, Docker containers, Multipass VMs, and Vagrant boxes */}}
-{{- if or (env "CODESPACES") (env "REMOTE_CONTAINERS_IPC") (eq .chezmoi.username "root" "ubuntu" "vagrant" "vscode") -}}
+{{- if or (env "CODESPACES") (env "REMOTE_CONTAINERS_IPC") (eq .chezmoi.username "vagrant" "vscode") -}}
 {{-   $ephemeral = true -}}
 {{-   $headless = true -}}
 {{- end -}}
@@ -54,7 +54,9 @@
     osid = {{ $osID | quote }}
 	zshPlugins = [
 		"git",
-		"macos",
+{{- if eq .chezmoi.os "darwin" }}		"macos",{{end}}
+{{- if eq .osid "linux-debian" }}		"debian",{{end}}
+{{- if eq .osid "linux-ubuntu" }}		"ubuntu",{{end}}
 		"brew",
 		"docker",
 		"thefuck",
