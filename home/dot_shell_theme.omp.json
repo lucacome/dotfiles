@@ -137,16 +137,10 @@
           "type": "text"
         },
         {
-          "template": "❯ ",
+          "template": "{{ if .Root }}<p:red> # </>{{else}} ❯ {{end}}",
           "foreground": "#43D426",
           "type": "text",
           "style": "plain"
-        },
-        {
-          "foreground": "p:red",
-          "style": "plain",
-          "type": "root",
-          "template": "# "
         }
       ],
       "type": "prompt"
