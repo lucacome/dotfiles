@@ -36,7 +36,7 @@
           "foreground": "p:foreground",
           "leading_diamond": "<p:foreground,transparent>\u256d\u2500</>",
           "style": "diamond",
-          "template": " {{ if .WSL }}WSL at {{ end }}{{.Icon}} {{.Hostname}}",
+          "template": " {{ if .WSL }}WSL at {{ end }}{{.Icon}} {{.HostName}}",
           "type": "os"
         },
         {
