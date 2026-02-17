@@ -27,6 +27,11 @@
     "foreground": "#43D426",
     "background": "transparent"
   },
+  "maps": {
+    "host_name": {
+      "studio.crash.internal": "studio"
+    }
+  },
   "blocks": [
     {
       "type": "prompt",
@@ -36,7 +41,7 @@
           "foreground": "p:foreground",
           "leading_diamond": "<p:foreground,transparent>\u256d\u2500</>",
           "style": "diamond",
-          "template": " {{ if .WSL }}WSL at {{ end }}{{.Icon}} {{.HostName}}",
+          "template": " {{ if .WSL }}WSL at {{ end }}{{.Icon}} {{.HostName}} ",
           "type": "os"
         },
         {
