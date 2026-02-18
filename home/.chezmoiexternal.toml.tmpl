@@ -6,12 +6,6 @@
     executable = true
     path = "age/age"
 
-["bin/atuin"]
-    type = "archive-file"
-    url = {{ gitHubLatestReleaseAssetURL "atuinsh/atuin" "atuin-x86_64-*-linux-gnu.tar.gz" }}
-    executable = true
-    path = "atuin"
-
 ["bin/oh-my-posh"]
 	type = "file"
 	url = {{ gitHubLatestReleaseAssetURL "JanDeDobbeleer/oh-my-posh" (printf "posh-linux-%s" .chezmoi.arch) | quote }}
