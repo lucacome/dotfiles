@@ -119,15 +119,6 @@ _comp_cdg() {
 compdef _comp_cdg cdg
 
 eval "$(atuin init zsh --disable-up-arrow)"
-
-export NVM_DIR="$HOME/.nvm"
-  [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"  # This loads nvm
-  [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
-
-if [ -d "/opt/homebrew/opt/ruby/bin" ]; then
-  export PATH=/opt/homebrew/opt/ruby/bin:$PATH
-  export PATH=`gem environment gemdir`/bin:$PATH
-fi
-
 eval "$(oh-my-posh init zsh --config ~/.shell_theme.omp.json)"
+
 {{- /* vim: set filetype=zsh: */}}
