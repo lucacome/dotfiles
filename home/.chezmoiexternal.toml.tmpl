@@ -1,3 +1,4 @@
+{{ if not .ephemeral }}
 [".oh-my-zsh"]
     type = "archive"
     url = "https://github.com/ohmyzsh/ohmyzsh/archive/master.tar.gz"
@@ -48,4 +49,4 @@
         "*/.github",
         "*/.gitignore",
     ]
-
+{{ end -}}

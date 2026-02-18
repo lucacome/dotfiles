@@ -70,13 +70,6 @@ autoload -U compinit; compinit
 export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 
-SPACESHIP_TIME_SHOW=true
-SPACESHIP_NODE_SHOW=false
-SPACESHIP_RUBY_SHOW=false
-SPACESHIP_ELM_SHOW=false
-SPACESHIP_EXIT_CODE_SHOW=true
-SPACESHIP_TIME_12HR=true
-SPACESHIP_DIR_TRUNC=0
 bindkey '^ ' autosuggest-accept
 
 {{ if stat (printf "%s/.local/bin/nvim" .chezmoi.homeDir) -}}
@@ -116,7 +109,11 @@ _comp_cdg() {
 # Compdef (Completion Definition)
 compdef _comp_cdg cdg
 
+{{ if not .ephemeral }}
 eval "$(atuin init zsh --disable-up-arrow)"
 eval "$(oh-my-posh init zsh --config ~/.shell_theme.omp.json)"
+{{ else }}
+PROMPT="%{$fg[white]%}%n@%{$fg[green]%}%m%{$reset_color%} ${PROMPT}"
+{{ end }}
 
 {{- /* vim: set filetype=zsh: */}}
