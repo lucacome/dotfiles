@@ -1,3 +1,5 @@
-alias update='brew update; brew upgrade; brew cleanup'
+{{- if eq .chezmoi.os "darwin" }}
+alias update='brew update; brew upgrade --greedy; brew upgrade --cask --greedy; brew cleanup; npm install -g npm'
+{{- end }}
 
 alias afk="pmset displaysleepnow"
