@@ -1,4 +1,24 @@
-{{ if not .ephemeral }}
+{{- if eq .osid "linux-debian" }}
+
+[".local/bin/age"]
+    type = "archive-file"
+    url = {{ gitHubLatestReleaseAssetURL "FiloSottile/age" (printf "age-*-%s-%s.tar.gz" .chezmoi.os .chezmoi.arch) | quote }}
+    executable = true
+    path = "age/age"
+
+[".local/bin/atuin"]
+    type = "archive-file"
+    url = {{ gitHubLatestReleaseAssetURL "atuinsh/atuin" (printf "atuin-%s-unknown-linux-gnu.tar.gz" .chezmoi.arch) | quote }}
+    executable = true
+    path = "atuin"
+
+[".local/bin/oh-my-posh"]
+	type = "file"
+	url = {{ gitHubLatestReleaseAssetURL "JanDeDobbeleer/oh-my-posh" (printf "posh-linux-%s" .chezmoi.arch) | quote }}
+	executable = true
+
+{{- end }}
+
 [".oh-my-zsh"]
     type = "archive"
     url = "https://github.com/ohmyzsh/ohmyzsh/archive/master.tar.gz"
@@ -49,4 +69,3 @@
         "*/.github",
         "*/.gitignore",
     ]
-{{ end -}}
