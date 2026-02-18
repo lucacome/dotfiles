@@ -7,8 +7,8 @@
     path = "age/age"
 
 ["bin/atuin"]
-    type = "file"
-    url = {{ gitHubLatestReleaseAssetURL "atuinsh/atuin" "atuin-x86_64-*-linux-gnu.tar.gz" }}
+    type = "archive-file"
+    url = {{ gitHubLatestReleaseAssetURL "atuinsh/atuin" "atuin-x86_64-*-linux-gnu.tar.gz" | quote}}
     executable = true
     path = "atuin"
 
