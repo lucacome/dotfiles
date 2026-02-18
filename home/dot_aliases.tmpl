@@ -2,4 +2,18 @@
 alias update='brew update; brew upgrade --greedy; brew upgrade --cask --greedy; brew cleanup; npm install -g npm'
 {{- end }}
 
-alias afk="pmset displaysleepnow"
+{{- if lookPath "bat" }}
+alias cat=bat
+{{- else if lookPath "batcat" }}
+alias cat=batcat
+{{- end }}
+{{- if lookPath "fdfind" }}
+alias fd=fdfind
+{{- end }}
+{{- if lookPath "eza" }}
+alias ls=eza
+alias la='eza -gla --git'
+alias ll='eza -gl --git'
+alias lrt='eza -gl -snewest --git'
+alias lart='eza -gla -snewest --git'
+{{- end }}

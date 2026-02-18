@@ -20,22 +20,18 @@
 {{- $hostname := .chezmoi.hostname -}}
 {{- if eq .chezmoi.os "darwin" -}}
 {{-   $computerName := output "scutil" "--get" "ComputerName" | trim -}}
-{{-   if eq $computerName "Tom’s MacBook Air" -}}
-{{-     $hostname = "toms-mba" -}}
+{{-   if eq $computerName "Claudia’s MacBook Air" -}}
+{{-     $hostname = "claudias-mba" -}}
 {{-   else -}}
 {{-     $hostname = $computerName -}}
 {{-   end -}}
 {{- end -}}
 
-{{- if eq .chezmoi.os "windows" -}}
-{{-   $ephemeral = true -}}
-{{- end -}}
-
 {{- if not $ephemeral -}}
-{{-   if eq $hostname "raspberrypi4" -}}
+{{-   if eq ($hostname "rpi") or ($hostname "pve") -}}
 {{-     $headless = true -}}
 {{-     $personal = true -}}
-{{-   else if eq $hostname "thinkpad" -}}
+{{-   else if eq $hostname "claudias-mba" -}}
 {{-     $personal = true -}}
 {{-   else if eq $hostname "studio" -}}
 {{-     $personal = true -}}
@@ -68,9 +64,8 @@
 		"history",
 		"common-aliases",
 		"zbell",
-		"aws",
-		"vscode",
-		"gnu-utils",
+{{- if eq .chezmoi.os "darwin" }}		"vscode",{{end}}
+{{- if eq .chezmoi.os "darwin" }}		"gnu-utils",{{end}}
 		"ssh",
 		"tailscale"
     ]

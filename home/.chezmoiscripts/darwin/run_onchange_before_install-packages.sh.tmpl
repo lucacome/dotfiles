@@ -1,0 +1,56 @@
+#!/bin/bash
+
+set -eufo pipefail
+
+{{ $brews := list
+    "age"
+    "atuin"
+    "bat"
+    "chezmoi"
+    "curl"
+    "eza"
+    "fd"
+    "fzf"
+    "gawk"
+    "gdu"
+    "gh"
+    "git-lfs"
+    "git"
+    "gnu-sed"
+    "gnu-tar"
+    "gnu-units"
+    "gnupg"
+    "go"
+    "golangci-lint"
+    "grep"
+    "jless"
+    "jq"
+    "pinentry-mac"
+    "pkg-config"
+    "ripgrep"
+    "shellcheck"
+    "tmux"
+    "wget"
+    "zsh" -}}
+{{ $casks := list
+    "balenaetcher"
+    "brave-browser"
+    "font-hack-nerd-font"
+    "font-meslo-lg-nerd-font"
+    "ghostty"
+    "hammerspoon"
+    "tailscale"
+    "visual-studio-code-insiders"
+	"signal"
+	"rustdesk"
+    "vlc" -}}
+
+
+brew bundle --file=/dev/stdin <<EOF
+{{ range ($brews | sortAlpha | uniq) -}}
+brew "{{ . }}"
+{{ end -}}
+{{ range ($casks | sortAlpha | uniq) -}}
+cask "{{ . }}"
+{{ end -}}
+EOF
