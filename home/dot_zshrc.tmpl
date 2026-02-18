@@ -79,7 +79,17 @@ SPACESHIP_TIME_12HR=true
 SPACESHIP_DIR_TRUNC=0
 bindkey '^ ' autosuggest-accept
 
+{{ if stat (printf "%s/.local/bin/nvim" .chezmoi.homeDir) -}}
+export EDITOR=$HOME/.local/bin/nvim
+{{ else if lookPath "nvim" -}}
 export EDITOR=nvim
+{{ else -}}
+export EDITOR=vim
+{{ end -}}
+
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+export PAGER=less
 
 # prefer homebrew versions
 {{- if eq .chezmoi.os "darwin" }}

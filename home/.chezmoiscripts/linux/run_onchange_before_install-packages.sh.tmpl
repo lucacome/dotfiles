@@ -1,0 +1,28 @@
+{{ if eq .osid "linux-debian" "linux-raspbian" "linux-ubuntu" -}}
+
+{{ $packages := list
+     "bat"
+     "build-essential"
+     "curl"
+     "fd-find"
+     "fzf"
+     "git"
+     "jq"
+     "openssh-server"
+     "ripgrep"
+     "units"
+     "zsh" -}}
+
+{{ $sudo := "sudo " -}}
+{{ if eq .chezmoi.username "root" -}}
+{{   $sudo = "" -}}
+{{ end -}}
+
+#!/bin/bash
+
+set -eufo pipefail
+
+{{ $sudo }}apt-get update
+{{ $sudo }}apt-get install -y {{ $packages | join " " }}
+
+{{ end -}}
