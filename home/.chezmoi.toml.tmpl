@@ -28,7 +28,7 @@
 {{- end -}}
 
 {{- if not $ephemeral -}}
-{{-   if eq ($hostname "rpi") or ($hostname "pve") -}}
+{{-   if or (eq $hostname "rpi") (eq $hostname "pve") -}}
 {{-     $headless = true -}}
 {{-     $personal = true -}}
 {{-   else if eq $hostname "claudias-mba" -}}
