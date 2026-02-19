@@ -1,0 +1,5 @@
+copy-on-select = clipboard
+font-size = 12
+shell-integration-features = ssh-env,ssh-terminfo
+window-inherit-working-directory = false
+macos-option-as-alt = true
