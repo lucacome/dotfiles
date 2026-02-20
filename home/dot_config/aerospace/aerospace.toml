@@ -210,15 +210,15 @@ on-mode-changed = []
 
 [[on-window-detected]]
     if.app-name-regex-substring = 'signal'
-    run = ["move-node-to-workspace V"]
+    run = ["move-node-to-workspace V", "layout floating"]
 
 [[on-window-detected]]
     if.app-name-regex-substring = 'discord'
-    run = ["move-node-to-workspace V"]
+    run = ["move-node-to-workspace V", "layout floating"]
 
 [[on-window-detected]]
     if.app-name-regex-substring = 'messages'
-    run = ["move-node-to-workspace V"]
+    run = ["move-node-to-workspace V", "layout floating"]
 
 [[on-window-detected]]
     if.app-name-regex-substring = 'ghostty'
