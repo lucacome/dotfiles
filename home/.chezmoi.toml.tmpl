@@ -1,3 +1,6 @@
+[hooks.read-source-state.pre]
+    command = ".local/share/chezmoi/.install-password-manager.sh"
+
 {{/* boolean feature tags */}}
 {{- $docker := false -}}{{/* true if this machine should have Docker installed */}}
 {{- $ephemeral := false -}}{{/* true if this machine is ephemeral, e.g. a cloud or VM instance */}}
@@ -75,6 +78,3 @@
 [git]
     autoCommit = true
     autoPush = true
-
-[hooks.read-source-state.pre]
-    command = ".local/share/chezmoi/.install-password-manager.sh"
