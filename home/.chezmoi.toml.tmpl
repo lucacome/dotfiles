@@ -36,6 +36,9 @@
 {{-     $personal = true -}}
 {{-   else if or (eq $hostname "studio") (eq $hostname "claudias-mba") -}}
 {{-     $personal = true -}}
+{{-   else if stdinIsATTY -}}
+{{-     $headless = promptBoolOnce . "headless" "headless" -}}
+{{-     $ephemeral = promptBoolOnce . "ephemeral" "ephemeral" -}}
 {{-   else -}}
 {{-     $ephemeral = true -}}
 {{-     $headless = true -}}
@@ -52,8 +55,8 @@
 	zshPlugins = [
 		"git",
 {{- if eq .chezmoi.os "darwin" }}		"macos",{{end}}
-{{- if eq .osid "linux-debian" }}		"debian",{{end}}
-{{- if eq .osid "linux-ubuntu" }}		"ubuntu",{{end}}
+{{- if eq $osID "linux-debian" }}		"debian",{{end}}
+{{- if eq $osID "linux-ubuntu" }}		"ubuntu",{{end}}
 		"brew",
 		"chezmoi",
 		"docker",
