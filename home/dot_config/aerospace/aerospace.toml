@@ -217,6 +217,10 @@ on-mode-changed = []
     run = ["move-node-to-workspace V"]
 
 [[on-window-detected]]
+    if.app-name-regex-substring = 'messages'
+    run = ["move-node-to-workspace V"]
+
+[[on-window-detected]]
     if.app-name-regex-substring = 'ghostty'
     run= ["move-node-to-workspace 1", "layout tiling"]
 
