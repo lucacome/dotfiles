@@ -53,17 +53,3 @@ brew "{{ . }}"
 cask "{{ . }}"
 {{ end -}}
 EOF
-
-# Get BWS TAG
-TAG=$(curl -sL https://api.github.com/repos/bitwarden/sdk-sm/tags | grep -o 'bws-v[^"]*' | sort -un | tail -n 1)
-# Get the latest release URL
-RELEASE_ARCHIVE_URL=$(curl -Ls "https://api.github.com/repos/bitwarden/sdk-sm/releases/tags/$TAG" | grep -Eo 'https://[^"]*' | grep universal)
-
-# Download the release archive and extract the binary
-curl -sL "$RELEASE_ARCHIVE_URL" -o /tmp/bitwarden-universal.zip
-unzip -q /tmp/bitwarden-universal.zip -d /tmp/
-
-# Move the binary to bin directory
-mkdir -p {{ .chezmoi.homeDir }}/bin
-mv /tmp/bws {{ .chezmoi.homeDir }}/bin/bws
-
