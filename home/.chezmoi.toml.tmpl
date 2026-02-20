@@ -3,8 +3,9 @@
 {{- $ephemeral := false -}}{{/* true if this machine is ephemeral, e.g. a cloud or VM instance */}}
 {{- $headless := false -}}{{/* true if this machine does not have a screen and keyboard */}}
 {{- $personal := false -}}{{/* true if this machine should have personal secrets */}}
-{{- $accessToken := promptStringOnce . "accessToken" "Enter BWS accessToken:" -}}
 {{- "" -}}
+{{- $accessToken := promptStringOnce . "accessToken" "Enter BWS accessToken:" -}}
+{{- $email = "" -}}
 
 {{- $osID := .chezmoi.os -}}
 {{- if (and (eq .chezmoi.os "linux") (hasKey .chezmoi.osRelease "id")) -}}
