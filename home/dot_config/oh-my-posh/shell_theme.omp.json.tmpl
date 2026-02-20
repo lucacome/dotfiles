@@ -29,7 +29,7 @@
   },
   "maps": {
     "host_name": {
-      {{ output "hostname" | quote }}: {{ chezmoi.hostname | quote }}
+      {{ output "hostname" | quote }}: {{ .chezmoi.hostname | quote }}
     }
   },
   "blocks": [
