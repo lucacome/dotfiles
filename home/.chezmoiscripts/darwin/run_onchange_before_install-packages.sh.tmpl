@@ -39,11 +39,11 @@ set -eufo pipefail
     "ghostty"
     "hammerspoon"
     "nikitabobko/tap/aerospace"
+    "raycast"
     "rustdesk"
     "signal"
     "visual-studio-code@insiders"
     "vlc" -}}
-
 
 brew bundle --file=/dev/stdin <<EOF
 {{ range ($brews | sortAlpha | uniq) -}}
@@ -52,4 +52,5 @@ brew "{{ . }}"
 {{ range ($casks | sortAlpha | uniq) -}}
 cask "{{ . }}"
 {{ end -}}
+mas "Bitwarden", id: 1352778147
 EOF
