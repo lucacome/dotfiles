@@ -5,19 +5,20 @@ set -eufo pipefail
 trap 'killall Dock' EXIT
 
 declare -a remove_labels=(
-	Mail
-	Maps
-	Photos
-	FaceTime
-	Calendar
-	Contacts
-	Reminders
-	Freeform
-	TV
-	Music
-	Keynote
-	Numbers
-	Pages
+    Calendar
+    Contacts
+    FaceTime
+    Freeform
+    Keynote
+    Mail
+    Maps
+    Music
+    News
+    Numbers
+    Pages
+    Photos
+    Reminders
+    TV
 )
 
 for label in "${remove_labels[@]}"; do
