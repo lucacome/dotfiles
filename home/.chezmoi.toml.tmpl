@@ -32,9 +32,8 @@
 {{-   if or (eq $hostname "rpi") (eq $hostname "pve") -}}
 {{-     $headless = true -}}
 {{-     $personal = true -}}
-{{-   else if eq $hostname "claudias-mba" -}}
-{{-     $personal = true -}}
-{{-   else if eq $hostname "studio" -}}
+{{-   else if or (eq $hostname "studio") (eq $hostname "claudias-mba") -}}
+{{-     $email = (bitwardenSecrets "8a498b41-0fcd-42c1-86ef-b3f70008f849" $accessToken).value -}}
 {{-     $personal = true -}}
 {{-   else -}}
 {{-     $ephemeral = true -}}
