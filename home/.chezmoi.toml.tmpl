@@ -1,5 +1,4 @@
-[hooks.read-source-state.pre]
-    command = ".local/share/chezmoi/.install-password-manager.sh"
+
 
 {{/* boolean feature tags */}}
 {{- $docker := false -}}{{/* true if this machine should have Docker installed */}}
@@ -8,7 +7,6 @@
 {{- $personal := false -}}{{/* true if this machine should have personal secrets */}}
 {{- "" -}}
 {{- $accessToken := promptStringOnce . "accessToken" "Enter BWS accessToken:" -}}
-{{- $email := "" -}}
 
 {{- $osID := .chezmoi.os -}}
 {{- if (and (eq .chezmoi.os "linux") (hasKey .chezmoi.osRelease "id")) -}}
@@ -37,7 +35,6 @@
 {{-     $headless = true -}}
 {{-     $personal = true -}}
 {{-   else if or (eq $hostname "studio") (eq $hostname "claudias-mba") -}}
-{{-     $email = (bitwardenSecrets "8a498b41-0fcd-42c1-86ef-b3f70008f849" $accessToken).value -}}
 {{-     $personal = true -}}
 {{-   else -}}
 {{-     $ephemeral = true -}}
@@ -49,7 +46,6 @@
 	accessToken= {{ $accessToken | quote }}
     docker = {{ $docker }}
     ephemeral = {{ $ephemeral }}
-    email = {{ $email | quote }}
     headless = {{ $headless }}
     personal = {{ $personal }}
     osid = {{ $osID | quote }}
@@ -78,3 +74,6 @@
 [git]
     autoCommit = true
     autoPush = true
+
+[hooks.read-source-state.pre]
+    command = ".local/share/chezmoi/.install-password-manager.sh"
