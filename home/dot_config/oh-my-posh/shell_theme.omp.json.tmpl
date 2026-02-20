@@ -29,7 +29,7 @@
   },
   "maps": {
     "host_name": {
-      "studio.crash.internal": "studio"
+      {{ output "hostname" | quote }}: {{ chezmoi.hostname | quote }}
     }
   },
   "blocks": [
