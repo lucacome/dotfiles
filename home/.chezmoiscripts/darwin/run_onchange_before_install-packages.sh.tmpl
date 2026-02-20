@@ -56,7 +56,7 @@ EOF
 # Get BWS TAG
 TAG=$(curl -sL https://api.github.com/repos/bitwarden/sdk-sm/tags | grep -o 'bws-v[^"]*' | sort -un | tail -n 1)
 # Get the latest release URL
-RELEASE_ARCHIVE_URL=$(curl -Ls "https://api.github.com/repos/bitwarden/sdk-sm/releases/tags/$TAG" | 'https://[^"]*' | grep universal)
+RELEASE_ARCHIVE_URL=$(curl -Ls "https://api.github.com/repos/bitwarden/sdk-sm/releases/tags/$TAG" | grep -Eo 'https://[^"]*' | grep universal)
 
 # Download the release archive and extract the binary
 curl -sL "$RELEASE_ARCHIVE_URL" -o /tmp/bitwarden-universal.zip
