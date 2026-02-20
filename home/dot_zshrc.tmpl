@@ -115,11 +115,11 @@ compdef _comp_cdg cdg
 
 {{ if not .ephemeral }}
 eval "$(atuin init zsh --disable-up-arrow)"
+eval "$(oh-my-posh init zsh --config ~/.config/oh-my-posh/shell_theme.omp.json)"
 
 function set_poshcontext() {
     export POSH_HOSTNAME=$(scutil --get ComputerName 2>/dev/null || hostname)
 }
-eval "$(oh-my-posh init zsh --config ~/.config/oh-my-posh/shell_theme.omp.json)"
 {{ else }}
 PROMPT="%{$fg[white]%}%n@%{$fg[green]%}%m%{$reset_color%} ${PROMPT}"
 {{ end }}
