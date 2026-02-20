@@ -31,3 +31,5 @@ unzip -q /tmp/bitwarden.zip -d /tmp/
 # Move the binary to bin directory
 mkdir -p "${HOME}"/bin
 mv /tmp/bws "${HOME}"/bin/bws
+
+export PATH="${HOME}/bin:${PATH}"
