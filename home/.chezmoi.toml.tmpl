@@ -5,7 +5,7 @@
 {{- $personal := false -}}{{/* true if this machine should have personal secrets */}}
 {{- "" -}}
 {{- $accessToken := promptStringOnce . "accessToken" "Enter BWS accessToken:" -}}
-{{- $email = "" -}}
+{{- $email := "" -}}
 
 {{- $osID := .chezmoi.os -}}
 {{- if (and (eq .chezmoi.os "linux") (hasKey .chezmoi.osRelease "id")) -}}
