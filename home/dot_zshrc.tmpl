@@ -119,7 +119,7 @@ eval "$(atuin init zsh --disable-up-arrow)"
 function set_poshcontext() {
     export POSH_HOSTNAME=$(scutil --get ComputerName 2>/dev/null || hostname)
 }
-
+export -f set_poshcontext
 eval "$(oh-my-posh init zsh --config ~/.config/oh-my-posh/shell_theme.omp.json)"
 {{ else }}
 PROMPT="%{$fg[white]%}%n@%{$fg[green]%}%m%{$reset_color%} ${PROMPT}"
