@@ -117,9 +117,8 @@ compdef _comp_cdg cdg
 eval "$(atuin init zsh --disable-up-arrow)"
 
 function set_poshcontext() {
-    export POSH_HOSTNAME=$(scutil --get ComputerName || hostname)
+    export POSH_HOSTNAME=$(scutil --get ComputerName 2>/dev/null || hostname)
 }
-export -f set_poshcontext
 
 eval "$(oh-my-posh init zsh --config ~/.config/oh-my-posh/shell_theme.omp.json)"
 {{ else }}
