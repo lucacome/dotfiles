@@ -54,9 +54,9 @@
     osid = {{ $osID | quote }}
 	zshPlugins = [
 		"git",
-{{- if eq .chezmoi.os "darwin" }}		"macos",{{end}}
-{{- if eq $osID "linux-debian" }}		"debian",{{end}}
-{{- if eq $osID "linux-ubuntu" }}		"ubuntu",{{end}}
+{{ if eq .chezmoi.os "darwin" }}		"macos",{{end}}
+{{ if eq $osID "linux-debian" }}		"debian",{{end}}
+{{ if eq $osID "linux-ubuntu" }}		"ubuntu",{{end}}
 		"brew",
 		"chezmoi",
 		"docker",
@@ -68,8 +68,8 @@
 		"history",
 		"common-aliases",
 		"zbell",
-{{- if eq .chezmoi.os "darwin" }}		"vscode",{{end}}
-{{- if eq .chezmoi.os "darwin" }}		"gnu-utils",{{end}}
+{{ if eq .chezmoi.os "darwin" }}		"vscode",{{end}}
+{{ if eq .chezmoi.os "darwin" }}		"gnu-utils",{{end}}
 		"ssh",
 		"tailscale"
     ]
