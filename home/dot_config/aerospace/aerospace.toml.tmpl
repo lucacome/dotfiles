@@ -75,7 +75,7 @@ on-mode-changed = []
     inner.vertical =   10
     outer.left =       20
     outer.bottom =     20
-    outer.top =        50
+    outer.top =        {{ if eq .chezmoi.hostname "studio" }} 50 {{ else }} 10 {{ end }}
     outer.right =      20
 
 # 'main' binding mode declaration
