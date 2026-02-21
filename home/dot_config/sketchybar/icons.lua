@@ -33,7 +33,7 @@ local icons = {
       download = "􀄩",
       connected = "􀙇",
       disconnected = "􀙈",
-      ethernet = "􀤆",
+      ethernet = "􀩲",
       router = "􁓤",
     },
     media = {

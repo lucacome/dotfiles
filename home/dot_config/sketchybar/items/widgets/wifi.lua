@@ -148,7 +148,7 @@ local ssid = sbar.add("item", {
     font = {
       style = settings.font.style_map["Bold"]
     },
-    string = icons.wifi.router,
+    string = icons.wifi.ethernet,
   },
   width = popup_width,
   align = "center",
@@ -329,7 +329,7 @@ local function refresh_network_icon()
       local connected = trim(ip) ~= ""
       wifi:set({
         icon = {
-          string = connected and (active_is_wifi and icons.wifi.connected or icons.wifi.router) or icons.wifi.disconnected,
+          string = connected and (active_is_wifi and icons.wifi.connected or icons.wifi.ethernet) or icons.wifi.disconnected,
           color = connected and colors.white or colors.red,
         },
       })
@@ -394,7 +394,7 @@ local function toggle_details()
             end)
           end)
         else
-          set_ssid_row("Ethernet", connected and icons.wifi.router or icons.wifi.disconnected)
+          set_ssid_row("Ethernet", connected and icons.wifi.ethernet or icons.wifi.disconnected)
         end
       end)
 
