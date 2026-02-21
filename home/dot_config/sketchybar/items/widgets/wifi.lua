@@ -49,7 +49,9 @@ local function refresh_active_network(callback)
           local device = line:match("^Device:%s*(.+)$")
           if device and trim(device) == iface then
             service = current_port or service
-            is_wifi = service:lower():find("wifi", 1, true) ~= nil
+            local normalized_service = service:lower()
+            is_wifi = normalized_service:find("wifi", 1, true) ~= nil
+              or normalized_service:find("wi%-fi") ~= nil
             break
           end
         end
