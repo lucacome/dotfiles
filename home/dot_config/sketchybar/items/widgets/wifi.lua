@@ -355,19 +355,48 @@ local function toggle_details()
       iface:set({ label = active_interface })
       service:set({ label = active_service })
 
+      local function set_ssid_row(value, icon)
+        ssid:set({
+          icon = { string = icon },
+          label = { string = value },
+        })
+      end
+
       sbar.exec("ipconfig getifaddr " .. active_interface .. " 2>/dev/null", function(result)
         local value = trim(result)
         ip:set({ label = value ~= "" and value or "N/A" })
-      end)
 
-      if active_is_wifi then
-        sbar.exec("ipconfig getsummary " .. active_interface .. " | awk -F ' SSID : ' '/ SSID : / {print $2}'", function(result)
-          local value = trim(result)
-          ssid:set({ label = value ~= "" and value or "Wi-Fi" })
-        end)
-      else
-        ssid:set({ label = "Ethernet" })
-      end
+        local connected = value ~= ""
+        if active_is_wifi then
+          if not connected then
+            set_ssid_row("Not Connected", icons.wifi.disconnected)
+            return
+          end
+
+          sbar.exec("networksetup -listpreferredwirelessnetworks " .. active_interface .. " 2>/dev/null | grep -v '^Preferred networks on' | head -1 | xargs", function(preferred_name)
+            local preferred_ssid = trim(preferred_name)
+            local preferred_lower = preferred_ssid:lower()
+
+            if preferred_ssid ~= "" and preferred_lower:find("<redacted>", 1, true) == nil then
+              set_ssid_row(preferred_ssid, icons.wifi.connected)
+              return
+            end
+
+            sbar.exec("ipconfig getsummary " .. active_interface .. " | awk -F ' SSID : ' '/ SSID : / {print $2}'", function(summary_name)
+              local fallback = trim(summary_name)
+              local fallback_lower = fallback:lower()
+
+              if fallback ~= "" and fallback_lower:find("<redacted>", 1, true) == nil then
+                set_ssid_row(fallback, icons.wifi.connected)
+              else
+                set_ssid_row("Wi-Fi", icons.wifi.connected)
+              end
+            end)
+          end)
+        else
+          set_ssid_row("Ethernet", connected and icons.wifi.router or icons.wifi.disconnected)
+        end
+      end)
 
       sbar.exec("ipconfig getoption " .. active_interface .. " subnet_mask 2>/dev/null", function(result)
         local value = trim(result)
