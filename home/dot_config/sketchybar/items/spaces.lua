@@ -10,6 +10,7 @@ local space_popups = {}
 local workspace_order = {}
 local refresh_generation = 0
 local refresh_workspaces
+local cached_other_visible_workspaces = {}
 local fixed_workspaces = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "Z", "X", "C", "V", "B", "N", "M" }
 
 local letter_keyboard_rank = { Z = 10, X = 11, C = 12, V = 13, B = 14, N = 15, M = 16 }
@@ -120,20 +121,29 @@ local function icon_line_from_apps(apps)
   return icon_line ~= "" and icon_line or " —"
 end
 
-local function set_selected_space(focused)
+local function set_selected_space(focused, other_visible_workspaces)
   local focused_key = workspace_key(focused)
+  other_visible_workspaces = other_visible_workspaces or {}
   for _, ws in ipairs(workspace_order) do
     local selected = (ws == focused_key)
+    local visible_elsewhere = other_visible_workspaces[ws] == true and not selected
+    local icon_color = selected and colors.green or (visible_elsewhere and colors.red or colors.white)
+    local item_border_color = selected and colors.black or colors.bg2
+    local bracket_border_color = selected and colors.green or (visible_elsewhere and colors.red or colors.bg2)
     if spaces[ws] then
       spaces[ws]:set({
-        icon = { highlight = selected },
+        icon = {
+          highlight = false,
+          color = icon_color,
+          highlight_color = colors.red,
+        },
         label = { highlight = selected },
-        background = { border_color = selected and colors.black or colors.bg2 },
+        background = { border_color = item_border_color },
       })
     end
     if space_brackets[ws] then
       space_brackets[ws]:set({
-        background = { border_color = selected and colors.grey or colors.bg2 },
+        background = { border_color = bracket_border_color },
       })
     end
   end
@@ -210,7 +220,7 @@ local function create_workspace_item(workspace)
       color = colors.transparent,
       border_color = colors.bg2,
       height = 28,
-      border_width = 2
+      border_width = 1
     }
   })
   space_brackets[workspace] = space_bracket
@@ -365,8 +375,50 @@ refresh_workspaces = function(callback)
           set_workspace_visible(space_name, visible_set[space_name] == true)
         end
 
-        set_selected_space(focused)
-        if callback then callback(focused) end
+        set_selected_space(focused, cached_other_visible_workspaces)
+
+        local monitor_visibility_cmd = "focused=$(aerospace list-monitors --focused --format '%{monitor-id}' 2>/dev/null); "
+          .. "for m in $(aerospace list-monitors --format '%{monitor-id}' 2>/dev/null); do "
+          .. "ws=$(aerospace list-workspaces --monitor \"$m\" --visible --format '%{workspace}' 2>/dev/null | head -n1); "
+          .. "printf '%s\\t%s\\n' \"$m\" \"$ws\"; "
+          .. "done; "
+          .. "printf 'FOCUSED\\t%s\\n' \"$focused\""
+
+        sbar.exec(monitor_visibility_cmd, function(monitor_visibility_out)
+          if generation ~= refresh_generation then return end
+
+          local focused_monitor = nil
+          local visible_by_monitor = {}
+
+          for _, line in ipairs(parse_lines(monitor_visibility_out)) do
+            local monitor_id_raw, value_raw = line:match("^(.-)\t(.*)$")
+            local key = trim(monitor_id_raw)
+            local value = trim(value_raw)
+
+            if key == "FOCUSED" then
+              focused_monitor = tonumber(value)
+            else
+              local monitor_id = tonumber(key)
+              if monitor_id and value ~= "" then
+                visible_by_monitor[monitor_id] = workspace_key(value)
+              end
+            end
+          end
+
+          local other_visible_workspaces = {}
+          if focused_monitor then
+            for monitor_id, ws in pairs(visible_by_monitor) do
+              if monitor_id ~= focused_monitor and ws then
+                other_visible_workspaces[ws] = true
+              end
+            end
+          end
+
+          cached_other_visible_workspaces = other_visible_workspaces
+
+          set_selected_space(focused, other_visible_workspaces)
+          if callback then callback(focused) end
+        end)
       end)
     end)
   end)
