@@ -4,6 +4,7 @@ local settings = require("settings")
 
 local battery = sbar.add("item", "widgets.battery", {
   position = "right",
+  drawing = false,
   icon = {
     font = {
       style = settings.font.style_map["Regular"],
@@ -17,6 +18,7 @@ local battery = sbar.add("item", "widgets.battery", {
 
 local remaining_time = sbar.add("item", {
   position = "popup." .. battery.name,
+  drawing = false,
   icon = {
     string = "Time remaining:",
     width = 100,
@@ -29,9 +31,34 @@ local remaining_time = sbar.add("item", {
   },
 })
 
+local battery_bracket = sbar.add("bracket", "widgets.battery.bracket", { battery.name }, {
+  background = { color = colors.bg1 },
+  drawing = false,
+})
 
-battery:subscribe({"routine", "power_source_change", "system_woke"}, function()
+local battery_padding = sbar.add("item", "widgets.battery.padding", {
+  position = "right",
+  width = settings.group_paddings,
+  drawing = false,
+})
+
+local function set_battery_visibility(visible)
+  battery:set({ drawing = visible })
+  battery_bracket:set({ drawing = visible })
+  battery_padding:set({ drawing = visible })
+  remaining_time:set({ drawing = visible })
+end
+
+local function update_battery_widget()
   sbar.exec("pmset -g batt", function(batt_info)
+    local has_charge = batt_info:find("(%d+)%%") ~= nil
+    if batt_info:find("[Nn]o batteries") or batt_info:find("[Nn]o battery") or not has_charge then
+      set_battery_visibility(false)
+      return
+    end
+
+    set_battery_visibility(true)
+
     local icon = "!"
     local label = "?"
 
@@ -75,7 +102,9 @@ battery:subscribe({"routine", "power_source_change", "system_woke"}, function()
       label = { string = lead .. label },
     })
   end)
-end)
+end
+
+battery:subscribe({"routine", "power_source_change", "system_woke"}, update_battery_widget)
 
 battery:subscribe("mouse.clicked", function(env)
   local drawing = battery:query().popup.drawing
@@ -90,11 +119,4 @@ battery:subscribe("mouse.clicked", function(env)
   end
 end)
 
-sbar.add("bracket", "widgets.battery.bracket", { battery.name }, {
-  background = { color = colors.bg1 }
-})
-
-sbar.add("item", "widgets.battery.padding", {
-  position = "right",
-  width = settings.group_paddings
-})
+update_battery_widget()
