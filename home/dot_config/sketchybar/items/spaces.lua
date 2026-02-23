@@ -292,16 +292,6 @@ local function initialize_workspace_items()
   end
 end
 
-local function parse_apps_output(output)
-  local apps = {}
-  for _, app in ipairs(parse_lines(output)) do
-    if not ignored_apps[app] then
-      table.insert(apps, app)
-    end
-  end
-  return apps
-end
-
 local function move_app_to_end(apps, focused_app)
   if not focused_app or focused_app == "" then return apps end
 
@@ -417,7 +407,9 @@ refresh_workspaces = function(callback)
           cached_other_visible_workspaces = other_visible_workspaces
 
           set_selected_space(focused, other_visible_workspaces)
+
           if callback then callback(focused) end
+
         end)
       end)
     end)

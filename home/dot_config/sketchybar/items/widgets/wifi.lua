@@ -76,13 +76,14 @@ local popup_width = 250
 
 local wifi_up = sbar.add("item", "widgets.wifi1", {
   position = "right",
-  padding_left = -5,
-  width = 0,
+  padding_left = 0,
+  padding_right = 3,
+  width = 86,
   icon = {
     padding_right = 0,
     font = {
       style = settings.font.style_map["Bold"],
-      size = 9.0,
+      size = 12.0,
     },
     string = icons.wifi.upload,
   },
@@ -90,22 +91,26 @@ local wifi_up = sbar.add("item", "widgets.wifi1", {
     font = {
       family = settings.font.numbers,
       style = settings.font.style_map["Bold"],
-      size = 9.0,
+      size = 12.0,
     },
+    width = 70,
+    align = "left",
     color = colors.red,
     string = "??? Bps",
   },
-  y_offset = 4,
+  y_offset = 0,
 })
 
 local wifi_down = sbar.add("item", "widgets.wifi2", {
   position = "right",
-  padding_left = -5,
+  padding_left = 0,
+  padding_right = 0,
+  width = 86,
   icon = {
     padding_right = 0,
     font = {
       style = settings.font.style_map["Bold"],
-      size = 9.0,
+      size = 12.0,
     },
     string = icons.wifi.download,
   },
@@ -113,16 +118,22 @@ local wifi_down = sbar.add("item", "widgets.wifi2", {
     font = {
       family = settings.font.numbers,
       style = settings.font.style_map["Bold"],
-      size = 9.0,
+      size = 12.0,
     },
+    width = 70,
+    align = "left",
     color = colors.blue,
     string = "??? Bps",
   },
-  y_offset = -4,
+  y_offset = 0,
 })
 
 local wifi = sbar.add("item", "widgets.wifi.padding", {
   position = "right",
+  padding_right = 1,
+  icon = {
+    padding_right = 1,
+  },
   label = { drawing = false },
 })
 
@@ -304,20 +315,33 @@ end
 
 sbar.add("item", { position = "right", width = settings.group_paddings })
 
+local function normalize_speed_text(value)
+  local speed = trim(value)
+  speed = speed:gsub("%s+", " ")
+  speed = speed:gsub("(%d)%s*(%a+[Pp][Ss])$", "%1 %2")
+  return speed
+end
+
 wifi_up:subscribe("network_update", function(env)
-  local up_color = (env.upload == "000 Bps") and colors.grey or colors.red
-  local down_color = (env.download == "000 Bps") and colors.grey or colors.blue
+  local up_value = normalize_speed_text(env.upload)
+  local down_value = normalize_speed_text(env.download)
+
+  local up_compact = up_value:gsub("%s+", "")
+  local down_compact = down_value:gsub("%s+", "")
+  local up_color = (up_compact == "000Bps" or up_compact == "0Bps") and colors.grey or colors.red
+  local down_color = (down_compact == "000Bps" or down_compact == "0Bps") and colors.grey or colors.blue
+
   wifi_up:set({
     icon = { color = up_color },
     label = {
-      string = env.upload,
+      string = up_value,
       color = up_color
     }
   })
   wifi_down:set({
     icon = { color = down_color },
     label = {
-      string = env.download,
+      string = down_value,
       color = down_color
     }
   })
