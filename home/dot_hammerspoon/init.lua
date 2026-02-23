@@ -103,6 +103,10 @@ local layers = {
 				desc = "Discord",
 				fn = launchOrFocus("Discord"),
 			},
+			y = {
+				desc = "System Settings",
+				fn = launchOrFocus("System Settings"),
+			}
 		},
 	},
 
@@ -130,6 +134,10 @@ local layers = {
 				desc = "9to5mac",
 				fn = openURL("https://9to5mac.com/"),
 			},
+			p = {
+				desc = "Bookmark Project",
+				fn = openURL("raycast://extensions/luolei/karakeep/createBookmark?List=Projects"),
+			}
 		},
 	},
 
