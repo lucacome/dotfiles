@@ -11,6 +11,8 @@ local workspace_order = {}
 local refresh_generation = 0
 local refresh_workspaces
 local cached_other_visible_workspaces = {}
+local cached_visible_set = {}
+local cached_focused = nil
 local fixed_workspaces = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "Z", "X", "C", "V", "B", "N", "M" }
 
 local letter_keyboard_rank = { Z = 10, X = 11, C = 12, V = 13, B = 14, N = 15, M = 16 }
@@ -362,7 +364,6 @@ refresh_workspaces = function(callback)
           if spaces[space_name] then
             spaces[space_name]:set({ label = icon_line_from_apps(apps) })
           end
-          set_workspace_visible(space_name, visible_set[space_name] == true)
         end
 
         set_selected_space(focused, cached_other_visible_workspaces)
@@ -405,6 +406,17 @@ refresh_workspaces = function(callback)
           end
 
           cached_other_visible_workspaces = other_visible_workspaces
+          cached_focused = focused
+
+          local new_visible_set = {}
+          for _, ws in ipairs(workspace_order) do
+            new_visible_set[ws] = visible_set[ws] or other_visible_workspaces[ws] == true
+          end
+          cached_visible_set = new_visible_set
+
+          for _, ws in ipairs(workspace_order) do
+            set_workspace_visible(ws, new_visible_set[ws])
+          end
 
           set_selected_space(focused, other_visible_workspaces)
 
@@ -460,6 +472,15 @@ spaces_indicator:subscribe("swap_menus_and_spaces", function(_)
   spaces_indicator:set({
     icon = currently_on and icons.switch.off or icons.switch.on
   })
+  if not currently_on then
+    -- Immediately restore cached state so spaces appear without delay,
+    -- then refresh in the background to pick up any changes.
+    for _, ws in ipairs(workspace_order) do
+      set_workspace_visible(ws, cached_visible_set[ws] == true)
+    end
+    set_selected_space(cached_focused, cached_other_visible_workspaces)
+    refresh_workspaces()
+  end
 end)
 
 spaces_indicator:subscribe("mouse.entered", function(_)
