@@ -52,29 +52,19 @@ condition=$(strings "$latest" 2>/dev/null | awk '
     if (seen >= 6) exit
   }
 ' | head -1 | xargs)
-night_hint=$(strings "$latest" 2>/dev/null | grep -Ei 'Night|Evening|Overnight' | head -1)
-
 if [ -z "$condition" ]; then
   condition=$(strings "$latest" 2>/dev/null | grep -E '^[A-Za-z][A-Za-z ]+, *-?[0-9]+$' | head -1 | sed -nE 's/^([^,]+),.*/\1/p' | xargs)
 fi
 
-if [ -n "$night_hint" ]; then
-  night_flag=1
-else
-  night_flag=0
-fi
-
-echo "$temp|$condition|$night_flag"
+echo "$temp|$condition"
 ]]
   sbar.exec(cmd, function(output)
     local raw = tostring(output or ""):gsub("^%s+", ""):gsub("%s+$", "")
-    local temp, condition, night_flag = raw:match("^([^|]*)|([^|]*)|([^|]*)$")
-    if not temp then
-      temp, condition = raw:match("^([^|]*)|(.*)$")
-    end
+    local temp, condition = raw:match("^([^|]*)|(.*)$")
     temp = (temp or raw):gsub("^%s+", ""):gsub("%s+$", "")
     condition = (condition or ""):lower()
-    local is_night = (night_flag or "") == "1"
+    local hour = tonumber(os.date("%H"))
+    local is_night = hour ~= nil and (hour < 6 or hour >= 20)
 
     if temp == "" then
       weather:set({ label = { string = "--°C" } })
@@ -92,13 +82,6 @@ echo "$temp|$condition|$night_flag"
       fog = "􀇅",
       thunder = "􀇟",
     }
-
-    if not is_night then
-      is_night = condition:find("night", 1, true)
-        or condition:find("evening", 1, true)
-        or condition:find("overnight", 1, true)
-        or condition:find("moon", 1, true)
-    end
 
     local icon = is_night and sf.moon or sf.sun
     if condition:find("thunder", 1, true) or condition:find("storm", 1, true) then
