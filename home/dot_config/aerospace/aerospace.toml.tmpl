@@ -75,7 +75,7 @@ on-mode-changed = []
     inner.vertical =   10
     outer.left =       20
     outer.bottom =     20
-    outer.top =        {{ if eq .chezmoi.hostname "studio" }} 50 {{ else }} 10 {{ end }}
+    outer.top =        {{ if eq .chezmoi.hostname "studio" }}50{{ else }}10{{ end }}
     outer.right =      20
 
 # 'main' binding mode declaration
@@ -225,6 +225,10 @@ on-mode-changed = []
     run = ["move-node-to-workspace V", "layout floating"]
 
 [[on-window-detected]]
+    if.app-name-regex-substring = 'whatsapp'
+    run = ["move-node-to-workspace V", "layout floating"]
+
+[[on-window-detected]]
     if.app-name-regex-substring = 'ghostty'
     run= ["move-node-to-workspace 1", "layout tiling"]
 
@@ -234,7 +238,7 @@ on-mode-changed = []
 
 [[on-window-detected]]
     if.app-name-regex-substring = 'brave'
-    run = ["move-node-to-workspace 5", "layout tiling"]
+    run = 'layout tiling'
 
 [[on-window-detected]]
     if.app-name-regex-substring = 'safari'
