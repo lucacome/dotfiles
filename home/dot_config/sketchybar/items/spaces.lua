@@ -443,6 +443,10 @@ workspace_refresh_observer:subscribe("aerospace_workspace_change", function(_)
   refresh_workspaces()
 end)
 
+workspace_refresh_observer:subscribe("system_woke", function(_)
+  refresh_workspaces()
+end)
+
 initialize_workspace_items()
 
 local spaces_indicator = sbar.add("item", {
