@@ -51,7 +51,7 @@ set -eufo pipefail
     "visual-studio-code@insiders"
     "vlc" -}}
 
-brew bundle --file=/dev/stdin <<EOF
+brew bundle --force --file=/dev/stdin <<EOF
 {{ range ($brews | sortAlpha | uniq) -}}
 brew "{{ . }}"
 {{ end -}}
