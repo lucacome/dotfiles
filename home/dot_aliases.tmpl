@@ -1,5 +1,5 @@
 {{- if eq .chezmoi.os "darwin" }}
-alias update='brew update; brew upgrade --greedy; brew upgrade --cask --greedy; brew cleanup; npm install -g npm'
+alias update='brew update; brew upgrade --greedy; brew upgrade --cask --greedy; brew cleanup; npm install -g npm; mise up --bump --yes; mise prune --yes'
 {{- end }}
 
 {{- if lookPath "bat" }}
