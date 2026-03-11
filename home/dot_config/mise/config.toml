@@ -1,0 +1,6 @@
+[tools]
+bitwarden = "latest"
+bitwarden-secrets-manager = { version = "latest", version_prefix = "bws-v" }
+
+[settings]
+experimental = true
