@@ -109,6 +109,7 @@ _comp_cdg() {
 # Compdef (Completion Definition)
 compdef _comp_cdg cdg
 
+eval "$(mise activate zsh)"
 {{- if not .ephemeral }}
 eval "$(atuin init zsh --disable-up-arrow)"
 eval "$(oh-my-posh init zsh --config ~/.config/oh-my-posh/shell_theme.omp.json)"
@@ -119,7 +120,6 @@ function set_poshcontext() {
 {{ else }}
 PROMPT="%{$fg[white]%}%n@%{$fg[green]%}%m%{$reset_color%} ${PROMPT}"
 {{ end }}
-eval "$(mise activate zsh)"
 
 {{- if eq .osid "linux-debian"  }}
 unalias age
