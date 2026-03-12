@@ -121,7 +121,7 @@ PROMPT="%{$fg[white]%}%n@%{$fg[green]%}%m%{$reset_color%} ${PROMPT}"
 {{ end }}
 eval "$(mise activate zsh)"
 
-{{- if eq .chezmoi.osid "linux-debian" }}
+{{- if eq .osid "linux-debian"  }}
 unalias age
 {{- end }}
 
