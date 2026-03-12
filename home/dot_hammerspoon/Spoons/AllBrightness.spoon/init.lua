@@ -6,8 +6,7 @@
 --- Note: If your keyboard brightness keys aren't triggering this Spoon, use Karabiner Elements to set them to `display_brightness_decrement` and `display_brightness_increment`.
 ---
 --- Download: [https://github.com/Hammerspoon/Spoons/raw/master/Spoons/AllBrightness.spoon.zip](https://github.com/Hammerspoon/Spoons/raw/master/Spoons/AllBrightness.spoon.zip)
-
-local obj={}
+local obj = {}
 obj.__index = obj
 
 -- Metadata
@@ -27,64 +26,63 @@ obj.steps = 17
 obj.referenceScreen = hs.screen.allScreens()[1]
 
 function obj:init()
-    self.eventtap = hs.eventtap.new({hs.eventtap.event.types.systemDefined},
-        function(mainEvent)
-            local event = mainEvent:systemKey()
-            local consumed = false
-            --print(event['key'])
---            print("Window: ", mainEvent:getProperty(hs.eventtap.event.properties['mouseEventWindowUnderMousePointer']))
-            if (not event or next(event) == nil) then
-                -- This isn't an event we care about, quit now and let it propagate
-                return false
+    self.eventtap = hs.eventtap.new({hs.eventtap.event.types.systemDefined}, function(mainEvent)
+        local event = mainEvent:systemKey()
+        local consumed = false
+        -- print(event['key'])
+        --            print("Window: ", mainEvent:getProperty(hs.eventtap.event.properties['mouseEventWindowUnderMousePointer']))
+        if (not event or next(event) == nil) then
+            -- This isn't an event we care about, quit now and let it propagate
+            return false
+        end
+
+        if (event['key'] ~= "BRIGHTNESS_UP" and event['key'] ~= "BRIGHTNESS_DOWN") then
+            return false
+        end
+
+        obj.brightness = obj.referenceScreen:getBrightness()
+        local newBrightness = obj.brightness
+
+        if (event['key'] == "BRIGHTNESS_UP") then
+            if (event['repeat'] or not event['down']) then
+                newBrightness = newBrightness + 1 / obj.steps
             end
+        end
 
-            if (event['key'] ~= "BRIGHTNESS_UP" and event['key'] ~= "BRIGHTNESS_DOWN") then
-                return false
+        if (event['key'] == "BRIGHTNESS_DOWN") then
+            if (event['repeat'] or not event['down']) then
+                newBrightness = newBrightness - 1 / obj.steps
             end
+        end
 
-            obj.brightness = obj.referenceScreen:getBrightness()
-            local newBrightness = obj.brightness
+        if newBrightness > 1.0 then
+            newBrightness = 1.0
+        end
 
-            if (event['key'] == "BRIGHTNESS_UP") then
-                if (event['repeat'] or not event['down']) then
-                    newBrightness = newBrightness + 1/obj.steps
-                end
-            end
+        if newBrightness < 0.0 then
+            newBrightness = 0.0
+        end
 
-            if (event['key'] == "BRIGHTNESS_DOWN") then
-                if (event['repeat'] or not event['down']) then
-                    newBrightness = newBrightness - 1/obj.steps
-                end
-            end
+        for _, screen in pairs(hs.screen.allScreens()) do
+            print("  set " .. newBrightness .. " on: " .. screen:name())
+            screen:setBrightness(newBrightness)
+            consumed = true
+        end
 
-            if newBrightness > 1.0 then
-                newBrightness = 1.0
-            end
+        obj.brightness = obj.referenceScreen:getBrightness()
 
-            if newBrightness < 0.0 then
-                newBrightness = 0.0
-            end
-
-            for _,screen in pairs(hs.screen.allScreens()) do
-                print("  set "..newBrightness.. " on: "..screen:name())
-                screen:setBrightness(newBrightness)
-                consumed = true
-            end
-
-            obj.brightness = obj.referenceScreen:getBrightness()
-
-            return consumed
-        end)
+        return consumed
+    end)
 end
 
 function obj:start()
-    --print("Starting AllBrightness")
+    -- print("Starting AllBrightness")
     self.brightness = obj.referenceScreen:getBrightness()
     self.eventtap:start()
 end
 
 function obj:stop()
-    --print("Stopping AllBrightness")
+    -- print("Stopping AllBrightness")
     self.eventtap:stop()
 end
 

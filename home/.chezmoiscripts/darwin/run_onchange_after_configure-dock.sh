@@ -22,7 +22,7 @@ declare -a remove_labels=(
 )
 
 for label in "${remove_labels[@]}"; do
-	dockutil --no-restart --remove "${label}" || true
+    dockutil --no-restart --remove "${label}" || true
 done
 
 dockutil --no-restart --add /Applications/Signal.app --after 'Messages' || true

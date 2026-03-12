@@ -30,9 +30,8 @@ defaults write com.apple.finder FXEnableExtensionChangeWarning -int 0
 
 defaults write com.apple.spaces spans-displays -int 1 && killall SystemUIServer
 
-
 ### remap caps lock to F20
-cat <<EOF > ~/Library/LaunchAgents/com.example.KeyRemapping.plist
+cat <<EOF >~/Library/LaunchAgents/com.example.KeyRemapping.plist
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
