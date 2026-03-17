@@ -30,28 +30,7 @@ defaults write com.apple.finder FXEnableExtensionChangeWarning -int 0
 
 defaults write com.apple.spaces spans-displays -int 1 && killall SystemUIServer
 
-### remap caps lock to F20
-cat <<EOF >~/Library/LaunchAgents/com.example.KeyRemapping.plist
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>Label</key>
-    <string>com.example.KeyRemapping</string>
-    <key>ProgramArguments</key>
-    <array>
-        <string>/usr/bin/hidutil</string>
-        <string>property</string>
-        <string>--set</string>
-        <string>{"UserKeyMapping":[
-          {
-            "HIDKeyboardModifierMappingSrc": 0x700000039,
-            "HIDKeyboardModifierMappingDst": 0x70000006F
-          }
-        ]}</string>
-    </array>
-    <key>RunAtLoad</key>
-    <true/>
-</dict>
-</plist>
-EOF
+# disable spotlight
+defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 64 "<dict><key>enabled</key><false/><key>value</key><dict><key>parameters</key><array><integer>32</integer><integer>49</integer><integer>1048576</integer></array><key>type</key><string>standard</string></dict></dict>"
+
+/System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u
