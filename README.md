@@ -33,7 +33,7 @@ Useful options enabled: `autocd`, `autopushd`, `share_history`, large history (1
 | [AeroSpace](https://github.com/nikitabobko/AeroSpace) | Tiling window manager |
 | [Sketchybar](https://felixkratz.github.io/SketchyBar/) | Custom menu bar |
 | [JankyBorders](https://github.com/FelixKratz/JankyBorders) | Focused window border highlight |
-| [Hammerspoon](https://www.hammerspoon.org/) | macOS automation & hotkeys |
+| [Karabiner-Elements](https://karabiner-elements.pqrs.org/) | Keyboard customization & remapping |
 
 ### Terminal
 
@@ -70,6 +70,7 @@ home/
     ├── borders/              # JankyBorders config
     ├── ghostty/              # Ghostty terminal config
     ├── mise/                 # mise tool version config
+    ├── karabiner/            # Karabiner-Elements keyboard config
     ├── oh-my-posh/           # Prompt theme
     └── sketchybar/           # Menu bar
 ```
