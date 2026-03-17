@@ -1,4 +1,5 @@
 {
+    "global": { "show_in_menu_bar": false },
     "profiles": [
         {
             "complex_modifications": {
@@ -171,12 +172,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Open https://twitter.com",
+                                "description": "Open https://claude.ai",
                                 "from": {
-                                    "key_code": "t",
+                                    "key_code": "c",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open https://twitter.com" }],
+                                "to": [{ "shell_command": "open https://claude.ai" }],
                                 "type": "basic"
                             },
                             {
@@ -187,44 +188,44 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Open https://mxstbr.com/cal",
+                                "description": "Open https://github.com/notifications",
+                                "from": {
+                                    "key_code": "g",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [{ "shell_command": "open https://github.com/notifications" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "hyper_sublayer_b",
+                                        "type": "variable_if",
+                                        "value": 1
+                                    }
+                                ],
+                                "description": "Open https://9to5mac.com/",
+                                "from": {
+                                    "key_code": "m",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [{ "shell_command": "open https://9to5mac.com/" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "hyper_sublayer_b",
+                                        "type": "variable_if",
+                                        "value": 1
+                                    }
+                                ],
+                                "description": "Open raycast://extensions/luolei/karakeep/createBookmark?List=Projects",
                                 "from": {
                                     "key_code": "p",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open https://mxstbr.com/cal" }],
-                                "type": "basic"
-                            },
-                            {
-                                "conditions": [
-                                    {
-                                        "name": "hyper_sublayer_b",
-                                        "type": "variable_if",
-                                        "value": 1
-                                    }
-                                ],
-                                "description": "Open https://news.ycombinator.com",
-                                "from": {
-                                    "key_code": "y",
-                                    "modifiers": { "optional": ["any"] }
-                                },
-                                "to": [{ "shell_command": "open https://news.ycombinator.com" }],
-                                "type": "basic"
-                            },
-                            {
-                                "conditions": [
-                                    {
-                                        "name": "hyper_sublayer_b",
-                                        "type": "variable_if",
-                                        "value": 1
-                                    }
-                                ],
-                                "description": "Open https://facebook.com",
-                                "from": {
-                                    "key_code": "f",
-                                    "modifiers": { "optional": ["any"] }
-                                },
-                                "to": [{ "shell_command": "open https://facebook.com" }],
+                                "to": [{ "shell_command": "open raycast://extensions/luolei/karakeep/createBookmark?List=Projects" }],
                                 "type": "basic"
                             },
                             {
@@ -251,12 +252,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Open https://hashnode.com/draft",
+                                "description": "Open https://www.youtube.com",
                                 "from": {
-                                    "key_code": "h",
+                                    "key_code": "y",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open https://hashnode.com/draft" }],
+                                "to": [{ "shell_command": "open https://www.youtube.com" }],
                                 "type": "basic"
                             }
                         ]
@@ -948,26 +949,6 @@
                                     "modifiers": { "optional": ["any"] }
                                 },
                                 "to": [{ "shell_command": "open raycast://extensions/raycast/system/open-camera" }],
-                                "type": "basic"
-                            },
-                            {
-                                "conditions": [
-                                    {
-                                        "name": "hyper_sublayer_s",
-                                        "type": "variable_if",
-                                        "value": 1
-                                    }
-                                ],
-                                "from": {
-                                    "key_code": "v",
-                                    "modifiers": { "optional": ["any"] }
-                                },
-                                "to": [
-                                    {
-                                        "key_code": "spacebar",
-                                        "modifiers": ["left_option"]
-                                    }
-                                ],
                                 "type": "basic"
                             }
                         ]
