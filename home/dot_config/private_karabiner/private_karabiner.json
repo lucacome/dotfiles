@@ -1,5 +1,4 @@
 {
-    "global": { "show_in_menu_bar": false },
     "profiles": [
         {
             "complex_modifications": {
@@ -1096,7 +1095,7 @@
                                 },
                                 "to": [
                                     {
-                                        "key_code": "f",
+                                        "key_code": "k",
                                         "modifiers": ["right_shift", "right_command"]
                                     }
                                 ],
@@ -1136,7 +1135,7 @@
                                 },
                                 "to": [
                                     {
-                                        "key_code": "d",
+                                        "key_code": "l",
                                         "modifiers": ["right_shift", "right_command"]
                                     }
                                 ],
