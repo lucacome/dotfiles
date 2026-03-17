@@ -1,6 +1,11 @@
 copy-on-select = clipboard
 font-size = 12
-shell-integration-features = ssh-env,ssh-terminfo
+shell-integration-features = ssh-env,ssh-terminfo,title
 window-inherit-working-directory = false
 macos-option-as-alt = true
 quit-after-last-window-closed = true
+keybind = cmd+s=text:\x01\x73
+macos-window-buttons = hidden
+macos-titlebar-style = hidden
+window-padding-balance = false
+link-previews = osc8
