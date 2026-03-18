@@ -110,9 +110,9 @@ on-mode-changed = []
         activate
     end tell'
     '''
-	alt-shift-s = 'exec-and-forget screencapture -i -c -x'
-	alt-f = 'fullscreen'
-	alt-shift-space = 'layout floating tiling'
+    alt-shift-s = 'exec-and-forget screencapture -i -c -x'
+    alt-f = 'fullscreen'
+    alt-shift-space = 'layout floating tiling'
 
     # See: https://nikitabobko.github.io/AeroSpace/commands#layout
     alt-slash = 'layout tiles horizontal vertical'
@@ -145,30 +145,30 @@ on-mode-changed = []
     alt-8 = 'workspace 8'
     alt-9 = 'workspace 9'
     alt-z = 'workspace Z'
-	alt-x = 'workspace X'
-	alt-c = 'workspace C'
-	alt-v = 'workspace V'
-	alt-b = 'workspace B'
-	alt-n = 'workspace N'
-	alt-m = 'workspace M'
+    alt-x = 'workspace X'
+    alt-c = 'workspace C'
+    alt-v = 'workspace V'
+    alt-b = 'workspace B'
+    alt-n = 'workspace N'
+    alt-m = 'workspace M'
 
     # See: https://nikitabobko.github.io/AeroSpace/commands#move-node-to-workspace
-    alt-shift-1 = 'move-node-to-workspace 1'
-    alt-shift-2 = 'move-node-to-workspace 2'
-    alt-shift-3 = 'move-node-to-workspace 3'
-    alt-shift-4 = 'move-node-to-workspace 4'
-    alt-shift-5 = 'move-node-to-workspace 5'
-    alt-shift-6 = 'move-node-to-workspace 6'
-    alt-shift-7 = 'move-node-to-workspace 7'
-    alt-shift-8 = 'move-node-to-workspace 8'
-    alt-shift-9 = 'move-node-to-workspace 9'
-	alt-shift-z = 'move-node-to-workspace Z'
-	alt-shift-x = 'move-node-to-workspace X'
-	alt-shift-c = 'move-node-to-workspace C'
-	alt-shift-v = 'move-node-to-workspace V'
-	alt-shift-b = 'move-node-to-workspace B'
-	alt-shift-n = 'move-node-to-workspace N'
-	alt-shift-m = 'move-node-to-workspace M'
+    alt-shift-1 = ['move-node-to-workspace 1', 'exec-and-forget sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE']
+    alt-shift-2 = ['move-node-to-workspace 2', 'exec-and-forget sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE']
+    alt-shift-3 = ['move-node-to-workspace 3', 'exec-and-forget sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE']
+    alt-shift-4 = ['move-node-to-workspace 4', 'exec-and-forget sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE']
+    alt-shift-5 = ['move-node-to-workspace 5', 'exec-and-forget sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE']
+    alt-shift-6 = ['move-node-to-workspace 6', 'exec-and-forget sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE']
+    alt-shift-7 = ['move-node-to-workspace 7', 'exec-and-forget sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE']
+    alt-shift-8 = ['move-node-to-workspace 8', 'exec-and-forget sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE']
+    alt-shift-9 = ['move-node-to-workspace 9', 'exec-and-forget sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE']
+    alt-shift-z = ['move-node-to-workspace Z', 'exec-and-forget sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE']
+    alt-shift-x = ['move-node-to-workspace X', 'exec-and-forget sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE']
+    alt-shift-c = ['move-node-to-workspace C', 'exec-and-forget sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE']
+    alt-shift-v = ['move-node-to-workspace V', 'exec-and-forget sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE']
+    alt-shift-b = ['move-node-to-workspace B', 'exec-and-forget sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE']
+    alt-shift-n = ['move-node-to-workspace N', 'exec-and-forget sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE']
+    alt-shift-m = ['move-node-to-workspace M', 'exec-and-forget sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE']
 
     # See: https://nikitabobko.github.io/AeroSpace/commands#workspace-back-and-forth
     alt-tab = 'workspace-back-and-forth'
@@ -184,17 +184,17 @@ on-mode-changed = []
     3 = 'main'
     4 = 'main'
     5 = 'main'
-	6 = 'main'
-	7 = 'main'
-	8 = 'main'
-	9 = 'main'
+    6 = 'main'
+    7 = 'main'
+    8 = 'main'
+    9 = 'main'
     Z = ['secondary', 'main']
     X = ['secondary', 'main']
     C = ['secondary', 'main']
     V = ['secondary', 'main']
-	B = ['secondary', 'main']
-	N = ['secondary', 'main']
-	M = ['secondary', 'main']
+    B = ['secondary', 'main']
+    N = ['secondary', 'main']
+    M = ['secondary', 'main']
 
 # 'service' binding mode declaration.
 # See: https://nikitabobko.github.io/AeroSpace/guide#binding-modes
@@ -233,8 +233,8 @@ on-mode-changed = []
     run= ["move-node-to-workspace 1", "layout tiling"]
 
 [[on-window-detected]]
-	if.app-name-regex-substring = 'insiders'
-	run = ["move-node-to-workspace 2", "layout tiling"]
+    if.app-name-regex-substring = 'insiders'
+    run = ["move-node-to-workspace 2", "layout tiling"]
 
 [[on-window-detected]]
     if.app-name-regex-substring = 'brave'
