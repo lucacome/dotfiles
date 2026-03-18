@@ -8,4 +8,5 @@ keybind = cmd+s=text:\x01\x73
 macos-window-buttons = hidden
 macos-titlebar-style = hidden
 window-padding-balance = true
+window-padding-x = 5
 link-previews = osc8
