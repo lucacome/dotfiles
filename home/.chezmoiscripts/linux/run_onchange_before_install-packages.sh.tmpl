@@ -23,5 +23,6 @@ set -eufo pipefail
 
 {{ $sudo }}apt-get update
 {{ $sudo }}apt-get install -y {{ $packages | join " " }}
+mise install -y
 
 {{ end -}}
