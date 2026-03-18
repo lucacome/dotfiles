@@ -439,7 +439,11 @@ workspace_refresh_observer:subscribe("space_windows_change", function(_)
   refresh_workspaces()
 end)
 
-workspace_refresh_observer:subscribe("aerospace_workspace_change", function(_)
+workspace_refresh_observer:subscribe("aerospace_workspace_change", function(env)
+  local focused = workspace_key(env.FOCUSED_WORKSPACE)
+  if focused then
+    set_selected_space(focused, cached_other_visible_workspaces)
+  end
   refresh_workspaces()
 end)
 
