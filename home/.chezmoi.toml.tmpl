@@ -52,7 +52,7 @@
 {{ if eq .chezmoi.os "darwin" }}		"macos",{{end}}
 {{ if eq $osID "linux-debian" }}		"debian",{{end}}
 {{ if eq $osID "linux-ubuntu" }}		"ubuntu",{{end}}
-		"brew",
+{{ if eq .chezmoi.os "darwin" }}		"brew",{{end}}
 		"chezmoi",
 		"docker",
 		"golang",
@@ -65,7 +65,11 @@
 {{ if eq .chezmoi.os "darwin" }}		"vscode",{{end}}
 {{ if eq .chezmoi.os "darwin" }}		"gnu-utils",{{end}}
 		"ssh",
-		"tailscale"
+		"tailscale",
+		"mise",
+		"command-not-found",
+		"yarn",
+		"alias-finder",
     ]
 
 [git]
