@@ -116,11 +116,10 @@ compdef _comp_cdg cdg
 zstyle ':omz:plugins:alias-finder' autoload yes
 zstyle ':omz:plugins:alias-finder' exact yes
 
-eval "$(mise activate zsh)"
 {{- if not .ephemeral }}
 eval "$(atuin init zsh --disable-up-arrow)"
 eval "$(oh-my-posh init zsh --config ~/.config/oh-my-posh/shell_theme.omp.json)"
-eval "$(zoxide init --cmd cd zsh)"
+export ZOXIDE_CMD_OVERRIDE=cd
 
 function set_poshcontext() {
     export POSH_HOSTNAME=$(scutil --get ComputerName 2>/dev/null || hostname)
