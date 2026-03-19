@@ -113,6 +113,9 @@ _comp_cdg() {
 # Compdef (Completion Definition)
 compdef _comp_cdg cdg
 
+zstyle ':omz:plugins:alias-finder' autoload yes
+zstyle ':omz:plugins:alias-finder' exact yes
+
 eval "$(mise activate zsh)"
 {{- if not .ephemeral }}
 eval "$(atuin init zsh --disable-up-arrow)"
