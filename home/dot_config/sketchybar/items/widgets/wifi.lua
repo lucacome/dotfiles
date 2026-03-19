@@ -153,6 +153,16 @@ local wifi_bracket = sbar.add("bracket", "widgets.wifi.bracket", {
   popup = { align = "center", height = 30 }
 })
 
+local function info_row(label_str, default, label_extra)
+  local lbl = { string = default, width = popup_width / 2, align = "right" }
+  if label_extra then for k, v in pairs(label_extra) do lbl[k] = v end end
+  return sbar.add("item", {
+    position = "popup." .. wifi_bracket.name,
+    icon = { align = "left", string = label_str, width = popup_width / 2 },
+    label = lbl,
+  })
+end
+
 local ssid = sbar.add("item", {
   position = "popup." .. wifi_bracket.name,
   icon = {
@@ -178,90 +188,13 @@ local ssid = sbar.add("item", {
   }
 })
 
-local hostname = sbar.add("item", {
-  position = "popup." .. wifi_bracket.name,
-  icon = {
-    align = "left",
-    string = "Hostname:",
-    width = popup_width / 2,
-  },
-  label = {
-    max_chars = 20,
-    string = "????????????",
-    width = popup_width / 2,
-    align = "right",
-  }
-})
+local hostname = info_row("Hostname:", "????????????", { max_chars = 20 })
+local ip       = info_row("IP:", "???.???.???.???")
+local mask     = info_row("Subnet mask:", "???.???.???.???")
 
-local ip = sbar.add("item", {
-  position = "popup." .. wifi_bracket.name,
-  icon = {
-    align = "left",
-    string = "IP:",
-    width = popup_width / 2,
-  },
-  label = {
-    string = "???.???.???.???",
-    width = popup_width / 2,
-    align = "right",
-  }
-})
-
-local mask = sbar.add("item", {
-  position = "popup." .. wifi_bracket.name,
-  icon = {
-    align = "left",
-    string = "Subnet mask:",
-    width = popup_width / 2,
-  },
-  label = {
-    string = "???.???.???.???",
-    width = popup_width / 2,
-    align = "right",
-  }
-})
-
-local router = sbar.add("item", {
-  position = "popup." .. wifi_bracket.name,
-  icon = {
-    align = "left",
-    string = "Router:",
-    width = popup_width / 2,
-  },
-  label = {
-    string = "???.???.???.???",
-    width = popup_width / 2,
-    align = "right",
-  },
-})
-
-local iface = sbar.add("item", {
-  position = "popup." .. wifi_bracket.name,
-  icon = {
-    align = "left",
-    string = "Interface:",
-    width = popup_width / 2,
-  },
-  label = {
-    string = "en0",
-    width = popup_width / 2,
-    align = "right",
-  },
-})
-
-local service = sbar.add("item", {
-  position = "popup." .. wifi_bracket.name,
-  icon = {
-    align = "left",
-    string = "Service:",
-    width = popup_width / 2,
-  },
-  label = {
-    string = "Wi-Fi",
-    width = popup_width / 2,
-    align = "right",
-  },
-})
+local router  = info_row("Router:", "???.???.???.???")
+local iface   = info_row("Interface:", "en0")
+local service = info_row("Service:", "Wi-Fi")
 
 local dns_items = {}
 
@@ -470,7 +403,7 @@ wifi:subscribe("mouse.exited.global", hide_details)
 
 copy_label_to_clipboard = function(env)
   local label = sbar.query(env.NAME).label.value
-  sbar.exec("echo \"" .. label .. "\" | pbcopy")
+  sbar.exec("printf '%s' " .. shell_quote(label) .. " | pbcopy")
   sbar.set(env.NAME, { label = { string = icons.clipboard, align="center" } })
   sbar.delay(1, function()
     sbar.set(env.NAME, { label = { string = label, align = "right" } })

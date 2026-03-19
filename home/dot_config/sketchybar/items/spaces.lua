@@ -95,24 +95,8 @@ local function sort_workspaces(workspaces)
   return sorted
 end
 
-local function workspace_item_name(workspace)
-  local normalized = workspace:gsub("[^%w_]", "_")
-  return "space.item." .. normalized
-end
-
-local function workspace_padding_name(workspace)
-  local normalized = workspace:gsub("[^%w_]", "_")
-  return "space.padding." .. normalized
-end
-
-local function workspace_popup_name(workspace)
-  local normalized = workspace:gsub("[^%w_]", "_")
-  return "space.popup." .. normalized
-end
-
-local function workspace_bracket_name(workspace)
-  local normalized = workspace:gsub("[^%w_]", "_")
-  return "space.bracket." .. normalized
+local function ws_name(kind, workspace)
+  return "space." .. kind .. "." .. workspace:gsub("[^%w_]", "_")
 end
 
 local function icon_line_from_apps(apps)
@@ -164,18 +148,10 @@ local function set_workspace_visible(workspace, visible)
 end
 
 local function remove_workspace_items()
-  for ws, _ in pairs(space_popups) do
-    sbar.remove(workspace_popup_name(ws))
-  end
-  for ws, _ in pairs(spaces) do
-    sbar.remove(workspace_item_name(ws))
-  end
-  for ws, _ in pairs(space_brackets) do
-    sbar.remove(workspace_bracket_name(ws))
-  end
-  for ws, _ in pairs(space_paddings) do
-    sbar.remove(workspace_padding_name(ws))
-  end
+  for ws, _ in pairs(space_popups) do sbar.remove(ws_name("popup", ws)) end
+  for ws, _ in pairs(spaces) do sbar.remove(ws_name("item", ws)) end
+  for ws, _ in pairs(space_brackets) do sbar.remove(ws_name("bracket", ws)) end
+  for ws, _ in pairs(space_paddings) do sbar.remove(ws_name("padding", ws)) end
   spaces = {}
   space_brackets = {}
   space_paddings = {}
@@ -183,7 +159,7 @@ local function remove_workspace_items()
 end
 
 local function create_workspace_item(workspace)
-  local item_name = workspace_item_name(workspace)
+  local item_name = ws_name("item", workspace)
 
   local space = sbar.add("item", item_name, {
     drawing = false,
@@ -215,8 +191,7 @@ local function create_workspace_item(workspace)
 
   spaces[workspace] = space
 
-  local bracket_name = workspace_bracket_name(workspace)
-  local space_bracket = sbar.add("bracket", bracket_name, { space.name }, {
+  local space_bracket = sbar.add("bracket", ws_name("bracket", workspace), { space.name }, {
     drawing = false,
     background = {
       color = colors.transparent,
@@ -227,13 +202,13 @@ local function create_workspace_item(workspace)
   })
   space_brackets[workspace] = space_bracket
 
-  local padding = sbar.add("item", workspace_padding_name(workspace), {
+  local padding = sbar.add("item", ws_name("padding", workspace), {
     script = "",
     width = 0,
   })
   space_paddings[workspace] = padding
 
-  local space_popup = sbar.add("item", workspace_popup_name(workspace), {
+  local space_popup = sbar.add("item", ws_name("popup", workspace), {
     position = "popup." .. space.name,
     padding_left = 5,
     padding_right = 0,

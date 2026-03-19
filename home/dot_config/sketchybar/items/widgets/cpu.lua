@@ -25,7 +25,6 @@ local ram = sbar.add("item", "widgets.cpu.ram", {
     align = "left",
     padding_right = 2,
     width = 30,
-    y_offset = 0,
   },
   padding_left = 4,
   padding_right = 4,
@@ -47,7 +46,6 @@ local cpu = sbar.add("item", "widgets.cpu", {
     align = "left",
     padding_right = 4,
     width = 30,
-    y_offset = 0,
   },
   padding_left = 4,
   padding_right = 4,
@@ -56,7 +54,7 @@ local cpu = sbar.add("item", "widgets.cpu", {
 cpu:subscribe("cpu_update", function(env)
   local load = tonumber(env.total_load) or 0
   cpu:set({
-    label = env.total_load .. "%",
+    label = string.format("%02d%%", load),
     icon = { color = load >= cpu_alert_threshold and colors.red or colors.white },
   })
 end)
@@ -67,7 +65,7 @@ local function update_ram()
     if value then
       local usage = tonumber(value) or 0
       ram:set({
-        label = value .. "%",
+        label = string.format("%02d%%", usage),
         icon = { color = usage >= ram_alert_threshold and colors.red or colors.white },
       })
     end
