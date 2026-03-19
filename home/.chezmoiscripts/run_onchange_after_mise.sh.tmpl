@@ -6,5 +6,7 @@ mise install -y
 {{- if eq .chezmoi.os "linux" }}
 usage --completions zsh > /usr/local/share/zsh/site-functions/_usage
 atuin gen-completion --shell zsh > /usr/local/share/zsh/site-functions/_atuin
-{{ end }}
 bws completions zsh > /usr/local/share/zsh/site-functions/_bws
+{{ else if eq .chezmoi.os "darwin" }}
+bws completions zsh > ~/.oh-my-zsh/custom/plugins/zsh-completions/src/_bws
+{{ end }}
