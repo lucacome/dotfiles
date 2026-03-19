@@ -23,8 +23,4 @@ set -eufo pipefail
 
 {{ $sudo }}apt-get update
 {{ $sudo }}apt-get install -y {{ $packages | join " " }}
-
-# mise.toml hash: {{ include "dot_config/mise/config.toml.tmpl" | sha256sum }}
-mise install -y
-
 {{ end -}}
