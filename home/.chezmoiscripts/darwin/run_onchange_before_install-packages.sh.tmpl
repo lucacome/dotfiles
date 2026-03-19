@@ -63,4 +63,5 @@ cask "{{ . }}"
 mas "Bitwarden", id: 1352778147
 EOF
 
+# mise.toml hash: {{ include "dot_config/mise/config.toml.tmpl" | sha256sum }}
 mise install -y
