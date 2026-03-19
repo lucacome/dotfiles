@@ -448,6 +448,16 @@ workspace_refresh_observer:subscribe("aerospace_workspace_change", function(env)
 end)
 
 workspace_refresh_observer:subscribe("system_woke", function(_)
+  -- Restore the last-known workspace layout immediately so spaces are
+  -- visible right away. Then kick off an async refresh so that any changes
+  -- that happened during sleep (AeroSpace reconnecting, new windows, etc.)
+  -- are picked up once the aerospace daemon is ready. Without this, all
+  -- spaces stay drawing=false until aerospace responds, which can take
+  -- well over a minute after a long sleep.
+  for _, ws in ipairs(workspace_order) do
+    set_workspace_visible(ws, cached_visible_set[ws] == true)
+  end
+  set_selected_space(cached_focused, cached_other_visible_workspaces)
   refresh_workspaces()
 end)
 

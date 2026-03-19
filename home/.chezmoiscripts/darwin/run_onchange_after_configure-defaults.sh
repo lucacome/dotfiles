@@ -34,3 +34,5 @@ defaults write com.apple.spaces spans-displays -int 1 && killall SystemUIServer
 defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 64 "<dict><key>enabled</key><false/><key>value</key><dict><key>parameters</key><array><integer>32</integer><integer>49</integer><integer>1048576</integer></array><key>type</key><string>standard</string></dict></dict>"
 
 /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u
+
+mkdir -p /usr/local/share/zsh/site-functions/

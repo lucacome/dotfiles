@@ -36,8 +36,11 @@ local function update_weather()
 latest=$(ls -t "$HOME/Library/Containers/com.apple.weather.widget/Data/SystemData/com.apple.chrono/timelines/com.apple.weather/"*.chrono-timeline 2>/dev/null | head -1)
 [ -n "$latest" ] || exit 0
 
-temp=$(strings "$latest" 2>/dev/null | grep -E 'Current Location, *-?[0-9]+' | head -1 | sed -nE 's/.*Current Location, *(-?[0-9]+).*/\1/p')
-condition=$(strings "$latest" 2>/dev/null | awk '
+# Run strings once and reuse the output to avoid reading the binary file 3x.
+all_strings=$(strings "$latest" 2>/dev/null)
+
+temp=$(printf '%s\n' "$all_strings" | grep -E 'Current Location, *-?[0-9]+' | head -1 | sed -nE 's/.*Current Location, *(-?[0-9]+).*/\1/p')
+condition=$(printf '%s\n' "$all_strings" | awk '
   /Current Location, *-?[0-9]+/ { capture=1; seen=0; next }
   capture {
     seen++
@@ -53,7 +56,7 @@ condition=$(strings "$latest" 2>/dev/null | awk '
   }
 ' | head -1 | xargs)
 if [ -z "$condition" ]; then
-  condition=$(strings "$latest" 2>/dev/null | grep -E '^[A-Za-z][A-Za-z ]+, *-?[0-9]+$' | head -1 | sed -nE 's/^([^,]+),.*/\1/p' | xargs)
+  condition=$(printf '%s\n' "$all_strings" | grep -E '^[A-Za-z][A-Za-z ]+, *-?[0-9]+$' | head -1 | sed -nE 's/^([^,]+),.*/\1/p' | xargs)
 fi
 
 echo "$temp|$condition"

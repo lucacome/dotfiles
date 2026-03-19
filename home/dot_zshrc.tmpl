@@ -46,6 +46,9 @@ plugins=(
 {{- end }}
 )
 
+fpath+=${ZSH_CUSTOM:-${ZSH:-~/.oh-my-zsh}/custom}/plugins/zsh-completions/src
+autoload -U compinit; compinit
+
 source $ZSH/oh-my-zsh.sh
 
 # User configuration
@@ -66,8 +69,6 @@ setopt hist_save_no_dups
 setopt hist_reduce_blanks
 setopt share_history
 setopt rm_star_silent
-
-autoload -U compinit; compinit
 
 export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
@@ -96,8 +97,6 @@ if [ -f "$HOMEBREW_COMMAND_NOT_FOUND_HANDLER" ]; then
   source "$HOMEBREW_COMMAND_NOT_FOUND_HANDLER";
 fi
 {{- end }}
-
-fpath+=${ZSH_CUSTOM:-${ZSH:-~/.oh-my-zsh}/custom}/plugins/zsh-completions/src
 
 # fzf
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh

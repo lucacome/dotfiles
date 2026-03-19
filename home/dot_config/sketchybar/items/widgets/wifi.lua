@@ -361,7 +361,13 @@ local function refresh_network_icon()
   end)
 end
 
-wifi:subscribe({"wifi_change", "system_woke"}, refresh_network_icon)
+wifi:subscribe("wifi_change", refresh_network_icon)
+wifi:subscribe("system_woke", function()
+  -- Delay refreshing the network icon after wake: networksetup can block
+  -- for up to 120 seconds while configd reinitializes the network stack.
+  -- Waiting a few seconds avoids hanging during bar startup.
+  sbar.delay(8, refresh_network_icon)
+end)
 network_watcher:subscribe("routine", refresh_network_icon)
 
 local function hide_details()
