@@ -33,6 +33,8 @@ HIST_STAMPS="yyyy-mm-dd"
 
 ZSH_DISABLE_COMPFIX=true
 
+export ZOXIDE_CMD_OVERRIDE=cd
+
 # Which plugins would you like to load?
 # Standard plugins can be found in $ZSH/plugins/
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
@@ -119,7 +121,6 @@ zstyle ':omz:plugins:alias-finder' exact yes
 {{- if not .ephemeral }}
 eval "$(atuin init zsh --disable-up-arrow)"
 eval "$(oh-my-posh init zsh --config ~/.config/oh-my-posh/shell_theme.omp.json)"
-export ZOXIDE_CMD_OVERRIDE=cd
 
 function set_poshcontext() {
     export POSH_HOSTNAME=$(scutil --get ComputerName 2>/dev/null || hostname)
