@@ -104,12 +104,6 @@ on-mode-changed = []
     # See: https://nikitabobko.github.io/AeroSpace/commands#exec-and-forget
     # You can uncomment the following lines to open up terminal with alt + enter shortcut
     # (like in i3)
-    ctrl-o = '''exec-and-forget osascript -e '
-    tell application "Ghostty"
-        do script
-        activate
-    end tell'
-    '''
     alt-shift-s = 'exec-and-forget screencapture -i -c -x'
     alt-f = 'fullscreen'
     alt-shift-space = 'layout floating tiling'
