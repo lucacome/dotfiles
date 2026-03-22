@@ -18,7 +18,8 @@ defaults write -g NSAutomaticWindowAnimationsEnabled -int 0
 defaults write -g WebAutomaticSpellingCorrectionEnabled -int 0
 defaults write -g NSWindowShouldDragOnGesture -int 1
 
-defaults write -g com.apple.trackpad.forceClick -int 1
+# disable lookup
+defaults write -g com.apple.trackpad.forceClick -int 0
 
 defaults write com.apple.dock autohide -int 1
 defaults write com.apple.dock orientation -string left
