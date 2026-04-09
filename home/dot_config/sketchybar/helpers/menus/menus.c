@@ -1,4 +1,5 @@
 #include <Carbon/Carbon.h>
+#include <stdlib.h>
 
 void ax_init()
 {
@@ -96,10 +97,15 @@ void ax_print_menu_options(AXUIElementRef app)
 
                 if (title)
                 {
-                    uint32_t buffer_len = 2 * CFStringGetLength(title);
-                    char buffer[2 * CFStringGetLength(title)];
-                    CFStringGetCString(title, buffer, buffer_len, kCFStringEncodingUTF8);
-                    printf("%s\n", buffer);
+                    CFIndex buffer_len = CFStringGetMaximumSizeForEncoding(
+                        CFStringGetLength(title), kCFStringEncodingUTF8) + 1;
+                    char *buffer = malloc(buffer_len);
+                    if (buffer)
+                    {
+                        CFStringGetCString(title, buffer, buffer_len, kCFStringEncodingUTF8);
+                        printf("%s\n", buffer);
+                        free(buffer);
+                    }
                     CFRelease(title);
                 }
             }
@@ -226,7 +232,6 @@ AXUIElementRef ax_get_extra_menu_item(char *alias)
 }
 
 extern int SLSMainConnectionID();
-extern void SLSSetMenuBarVisibilityOverrideOnDisplay(int cid, int did, bool enabled);
 extern void SLSSetMenuBarVisibilityOverrideOnDisplay(int cid, int did, bool enabled);
 extern void SLSSetMenuBarInsetAndAlpha(int cid, double u1, double u2, float alpha);
 void ax_select_menu_extra(char *alias)

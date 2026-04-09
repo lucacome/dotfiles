@@ -46,6 +46,11 @@ sbar.add("bracket", { cal.name }, {
 -- Padding item required because of bracket
 sbar.add("item", { position = "right", width = settings.group_paddings })
 
-cal:subscribe({ "forced", "routine", "system_woke" }, function(_)
+cal:subscribe({ "forced", "routine" }, function(_)
   cal:set({ label = os.date("%A %d %b. %I:%M:%S %p") })
+end)
+cal:subscribe("system_woke", function(_)
+  sbar.delay(5, function()
+    cal:set({ label = os.date("%A %d %b. %I:%M:%S %p") })
+  end)
 end)

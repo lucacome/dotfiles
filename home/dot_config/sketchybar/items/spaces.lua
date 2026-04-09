@@ -2,6 +2,11 @@ local colors = require("colors")
 local icons = require("icons")
 local settings = require("settings")
 local app_icons = require("helpers.app_icons")
+local utils = require("helpers.utils")
+
+local trim = utils.trim
+local parse_lines = utils.parse_lines
+local shell_quote = utils.shell_quote
 
 local spaces = {}
 local space_brackets = {}
@@ -12,36 +17,17 @@ local refresh_generation = 0
 local refresh_workspaces
 local cached_other_visible_workspaces = {}
 local cached_visible_set = {}
+local cached_has_apps = {}   -- true for each workspace that has ≥1 window
 local cached_focused = nil
 local fixed_workspaces = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "Z", "X", "C", "V", "B", "N", "M" }
 
 local letter_keyboard_rank = { Z = 10, X = 11, C = 12, V = 13, B = 14, N = 15, M = 16 }
 local ignored_apps = { Finder = true }
 
-local function trim(value)
-  return tostring(value or ""):gsub("^%s+", ""):gsub("%s+$", "")
-end
-
-local function shell_quote(value)
-  local s = trim(value)
-  return "'" .. s:gsub("'", "'\\''") .. "'"
-end
-
 local function workspace_key(value)
   local k = trim(value)
   if k == "" then return nil end
   return k
-end
-
-local function parse_lines(output)
-  local result = {}
-  for line in tostring(output or ""):gmatch("[^\r\n]+") do
-    local value = trim(line)
-    if value ~= "" then
-      table.insert(result, value)
-    end
-  end
-  return result
 end
 
 local function list_equals(left, right)
@@ -298,6 +284,24 @@ refresh_workspaces = function(callback)
     if generation ~= refresh_generation then return end
     local focused = workspace_key((parse_lines(focused_out))[1])
 
+    -- AeroSpace hasn't reconnected yet after a wake (focused query returned
+    -- nothing). Only bail out when we have prior cached state to restore;
+    -- on a fresh start cached_focused is nil and the nested calls should run
+    -- so that workspaces with apps still become visible.
+    if focused == nil and cached_focused ~= nil then
+      for _, ws in ipairs(workspace_order) do
+        set_workspace_visible(ws, cached_visible_set[ws] == true)
+      end
+      set_selected_space(cached_focused, cached_other_visible_workspaces)
+      sbar.delay(5, function()
+        -- Only retry if no fresher refresh has been triggered in the meantime.
+        if generation == refresh_generation then
+          refresh_workspaces(callback)
+        end
+      end)
+      return
+    end
+
     sbar.exec("aerospace list-windows --focused --format '%{app-name}' 2>/dev/null", function(focused_app_out)
       if generation ~= refresh_generation then return end
       local focused_app = (parse_lines(focused_app_out))[1]
@@ -312,10 +316,9 @@ refresh_workspaces = function(callback)
         end
 
         for _, line in ipairs(parse_lines(all_windows_out)) do
+          -- AeroSpace outputs the literal two-char sequence \t (0x5c 0x74)
+          -- between fields; it does NOT expand \t to a real tab character.
           local ws, app = line:match("^(.-)\\t(.*)$")
-          if not ws then
-            ws, app = line:match("^(.-)\t(.*)$")
-          end
 
           ws = workspace_key(ws)
           app = trim(app)
@@ -327,8 +330,8 @@ refresh_workspaces = function(callback)
 
         local visible_set = {}
         for _, ws in ipairs(workspace_order) do
-          local apps = move_app_to_end(apps_by_ws[ws] or {}, focused_app)
-          apps_by_ws[ws] = apps
+          local apps = apps_by_ws[ws] or {}
+          cached_has_apps[ws] = #apps > 0
           if #apps > 0 or (focused and ws == focused) then
             visible_set[ws] = true
           end
@@ -416,24 +419,40 @@ end)
 
 workspace_refresh_observer:subscribe("aerospace_workspace_change", function(env)
   local focused = workspace_key(env.FOCUSED_WORKSPACE)
-  if focused then
-    set_selected_space(focused, cached_other_visible_workspaces)
+  if not focused then return end
+
+  cached_focused = focused
+
+  -- Recompute visibility synchronously from cached data.
+  -- Windows haven't changed — only which workspace is focused — so there
+  -- is no need to shell out. This avoids any visual reordering or flicker.
+  local new_visible_set = {}
+  for _, ws in ipairs(workspace_order) do
+    new_visible_set[ws] = (ws == focused)
+        or (cached_has_apps[ws] == true)
+        or (cached_other_visible_workspaces[ws] == true)
   end
-  refresh_workspaces()
+  cached_visible_set = new_visible_set
+
+  for _, ws in ipairs(workspace_order) do
+    set_workspace_visible(ws, new_visible_set[ws])
+  end
+
+  set_selected_space(focused, cached_other_visible_workspaces)
 end)
 
 workspace_refresh_observer:subscribe("system_woke", function(_)
   -- Restore the last-known workspace layout immediately so spaces are
-  -- visible right away. Then kick off an async refresh so that any changes
-  -- that happened during sleep (AeroSpace reconnecting, new windows, etc.)
-  -- are picked up once the aerospace daemon is ready. Without this, all
-  -- spaces stay drawing=false until aerospace responds, which can take
-  -- well over a minute after a long sleep.
+  -- visible right away. Then wait a few seconds before querying AeroSpace —
+  -- it needs time to reconnect after wake, and querying it too early causes
+  -- the nil-focused bail-out to fire, which starts a 5-second retry loop.
   for _, ws in ipairs(workspace_order) do
     set_workspace_visible(ws, cached_visible_set[ws] == true)
   end
   set_selected_space(cached_focused, cached_other_visible_workspaces)
-  refresh_workspaces()
+  sbar.delay(4, function()
+    refresh_workspaces()
+  end)
 end)
 
 initialize_workspace_items()

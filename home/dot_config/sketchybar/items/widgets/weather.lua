@@ -1,6 +1,18 @@
 local colors = require("colors")
 local settings = require("settings")
 
+local sf_icons = {
+  sun = "􀆭",
+  moon = "􀆺",
+  cloud = "􀇂",
+  cloud_sun = "􀇕",
+  cloud_moon = "􀇚",
+  rain = "􀇄",
+  snow = "􀇗",
+  fog = "􀇅",
+  thunder = "􀇟",
+}
+
 local weather = sbar.add("item", "widgets.weather", {
   position = "right",
   icon = {
@@ -74,18 +86,7 @@ echo "$temp|$condition"
       return
     end
 
-    local sf = {
-      sun = "􀆭",
-      moon = "􀆺",
-      cloud = "􀇂",
-      cloud_sun = "􀇕",
-      cloud_moon = "􀇚",
-      rain = "􀇄",
-      snow = "􀇗",
-      fog = "􀇅",
-      thunder = "􀇟",
-    }
-
+    local sf = sf_icons
     local icon = is_night and sf.moon or sf.sun
     if condition:find("thunder", 1, true) or condition:find("storm", 1, true) then
       icon = sf.thunder
@@ -108,5 +109,8 @@ echo "$temp|$condition"
   end)
 end
 
-weather:subscribe({ "routine", "system_woke", "forced" }, update_weather)
+weather:subscribe({ "routine", "forced" }, update_weather)
+weather:subscribe("system_woke", function()
+  sbar.delay(5, update_weather)
+end)
 update_weather()

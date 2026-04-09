@@ -44,9 +44,13 @@ static inline void cpu_update(struct cpu *cpu)
 
         uint32_t delta_idle = cpu->load.cpu_ticks[CPU_STATE_IDLE] - cpu->prev_load.cpu_ticks[CPU_STATE_IDLE];
 
-        cpu->user_load = (double)delta_user / (double)(delta_system + delta_user + delta_idle) * 100.0;
+        uint32_t delta_nice = cpu->load.cpu_ticks[CPU_STATE_NICE] - cpu->prev_load.cpu_ticks[CPU_STATE_NICE];
 
-        cpu->sys_load = (double)delta_system / (double)(delta_system + delta_user + delta_idle) * 100.0;
+        uint32_t delta_total = delta_user + delta_system + delta_idle + delta_nice;
+
+        cpu->user_load = (double)delta_user / (double)delta_total * 100.0;
+
+        cpu->sys_load = (double)delta_system / (double)delta_total * 100.0;
 
         cpu->total_load = cpu->user_load + cpu->sys_load;
     }

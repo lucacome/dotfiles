@@ -60,12 +60,11 @@ local function update_battery_widget()
     set_battery_visibility(true)
 
     local icon = "!"
-    local label = "?"
+    local charge = nil
 
-    local found, _, charge = batt_info:find("(%d+)%%")
+    local found, _, charge_str = batt_info:find("(%d+)%%")
     if found then
-      charge = tonumber(charge)
-      label = charge .. "%"
+      charge = tonumber(charge_str)
     end
 
     local color = colors.green
@@ -74,13 +73,13 @@ local function update_battery_widget()
     if charging then
       icon = icons.battery.charging
     else
-      if found and charge > 80 then
+      if charge and charge > 80 then
         icon = icons.battery._100
-      elseif found and charge > 60 then
+      elseif charge and charge > 60 then
         icon = icons.battery._75
-      elseif found and charge > 40 then
+      elseif charge and charge > 40 then
         icon = icons.battery._50
-      elseif found and charge > 20 then
+      elseif charge and charge > 20 then
         icon = icons.battery._25
         color = colors.orange
       else
@@ -89,22 +88,20 @@ local function update_battery_widget()
       end
     end
 
-    local lead = ""
-    if found and charge < 10 then
-      lead = "0"
-    end
-
     battery:set({
       icon = {
         string = icon,
         color = color
       },
-      label = { string = lead .. label },
+      label = { string = charge and string.format("%02d%%", charge) or "?%" },
     })
   end)
 end
 
-battery:subscribe({"routine", "power_source_change", "system_woke"}, update_battery_widget)
+battery:subscribe({"routine", "power_source_change"}, update_battery_widget)
+battery:subscribe("system_woke", function()
+  sbar.delay(5, update_battery_widget)
+end)
 
 battery:subscribe("mouse.clicked", function(env)
   local drawing = battery:query().popup.drawing

@@ -1,31 +1,16 @@
 local icons = require("icons")
 local colors = require("colors")
 local settings = require("settings")
+local utils = require("helpers.utils")
+
+local trim = utils.trim
+local parse_lines = utils.parse_lines
+local shell_quote = utils.shell_quote
 
 local active_interface = "en0"
 local active_service = "Wi-Fi"
 local active_is_wifi = true
 local copy_label_to_clipboard
-
-local function trim(value)
-  return tostring(value or ""):gsub("^%s+", ""):gsub("%s+$", "")
-end
-
-local function parse_lines(output)
-  local result = {}
-  for line in tostring(output or ""):gmatch("[^\r\n]+") do
-    local value = trim(line)
-    if value ~= "" then
-      table.insert(result, value)
-    end
-  end
-  return result
-end
-
-local function shell_quote(value)
-  local s = trim(value)
-  return "'" .. s:gsub("'", "'\\''") .. "'"
-end
 
 local function restart_network_provider(interface)
   sbar.exec("killall network_load >/dev/null 2>&1; $CONFIG_DIR/helpers/event_providers/network_load/bin/network_load " .. interface .. " network_update 2.0")
@@ -261,8 +246,8 @@ wifi_up:subscribe("network_update", function(env)
 
   local up_compact = up_value:gsub("%s+", "")
   local down_compact = down_value:gsub("%s+", "")
-  local up_color = (up_compact == "000Bps" or up_compact == "0Bps") and colors.grey or colors.red
-  local down_color = (down_compact == "000Bps" or down_compact == "0Bps") and colors.grey or colors.blue
+  local up_color = (tonumber(up_compact:match("^(%d+)")) == 0) and colors.grey or colors.red
+  local down_color = (tonumber(down_compact:match("^(%d+)")) == 0) and colors.grey or colors.blue
 
   wifi_up:set({
     icon = { color = up_color },
@@ -295,11 +280,13 @@ local function refresh_network_icon()
 end
 
 wifi:subscribe("wifi_change", refresh_network_icon)
-wifi:subscribe("system_woke", function()
-  -- Delay refreshing the network icon after wake: networksetup can block
-  -- for up to 120 seconds while configd reinitializes the network stack.
-  -- Waiting a few seconds avoids hanging during bar startup.
-  sbar.delay(8, refresh_network_icon)
+network_watcher:subscribe("system_woke", function()
+  -- Kill with -9 (SIGKILL) so a stuck post-sleep process is force-removed,
+  -- then restart after a short delay to let the network stack stabilise.
+  sbar.exec("killall -9 network_load >/dev/null 2>&1")
+  sbar.delay(3, function()
+    restart_network_provider(active_interface)
+  end)
 end)
 network_watcher:subscribe("routine", refresh_network_icon)
 

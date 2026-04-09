@@ -79,7 +79,14 @@ local ram_observer = sbar.add("item", {
 })
 
 ram_observer:subscribe("routine", update_ram)
-ram_observer:subscribe("system_woke", update_ram)
+ram_observer:subscribe("system_woke", function()
+  -- Use SIGKILL (-9) so a post-sleep stuck process is force-removed,
+  -- then restart after a short delay.
+  sbar.exec("killall -9 cpu_load >/dev/null 2>&1")
+  sbar.delay(3, function()
+    sbar.exec("$CONFIG_DIR/helpers/event_providers/cpu_load/bin/cpu_load cpu_update 2.0")
+  end)
+end)
 
 cpu:subscribe("mouse.clicked", function(_)
   sbar.exec("open -a 'Activity Monitor'")

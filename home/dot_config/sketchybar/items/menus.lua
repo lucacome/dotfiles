@@ -48,7 +48,7 @@ local function update_menus(env)
     menu_padding:set({ drawing = true })
     local id = 1
     for menu in string.gmatch(menus, '[^\r\n]+') do
-      if id < max_items then
+      if id <= max_items then
         menu_items[id]:set( { label = menu, drawing = true } )
       else break end
       id = id + 1
