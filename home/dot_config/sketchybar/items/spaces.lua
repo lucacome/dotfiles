@@ -412,8 +412,15 @@ local workspace_refresh_observer = sbar.add("item", {
 })
 
 sbar.add("event", "aerospace_workspace_change")
+sbar.add("event", "aerospace_focus_changed")
 
 workspace_refresh_observer:subscribe("space_windows_change", function(_)
+  refresh_workspaces()
+end)
+
+-- Fired by AeroSpace on-focus-changed for every focus/window-move event.
+-- Catches window moves between workspaces that don't trigger a workspace switch.
+workspace_refresh_observer:subscribe("aerospace_focus_changed", function(_)
   refresh_workspaces()
 end)
 
@@ -423,9 +430,8 @@ workspace_refresh_observer:subscribe("aerospace_workspace_change", function(env)
 
   cached_focused = focused
 
-  -- Recompute visibility synchronously from cached data.
-  -- Windows haven't changed — only which workspace is focused — so there
-  -- is no need to shell out. This avoids any visual reordering or flicker.
+  -- Apply the focus change immediately from cached data so the highlight
+  -- moves instantly without waiting for async shell calls.
   local new_visible_set = {}
   for _, ws in ipairs(workspace_order) do
     new_visible_set[ws] = (ws == focused)
@@ -439,6 +445,13 @@ workspace_refresh_observer:subscribe("aerospace_workspace_change", function(env)
   end
 
   set_selected_space(focused, cached_other_visible_workspaces)
+
+  -- Also do a full async refresh to pick up any window changes.
+  -- AeroSpace fires aerospace_workspace_change when windows are moved
+  -- between workspaces (not just on focus switches), and space_windows_change
+  -- is a macOS Mission Control event that does NOT fire for AeroSpace virtual
+  -- workspace moves. Without this, app icons stay stale after a window move.
+  refresh_workspaces()
 end)
 
 workspace_refresh_observer:subscribe("system_woke", function(_)
