@@ -1151,8 +1151,8 @@
                                 },
                                 "to": [
                                     {
-                                        "key_code": "l",
-                                        "modifiers": ["right_shift", "right_command"]
+                                        "key_code": "d",
+                                        "modifiers": ["right_shift", "right_option"]
                                     }
                                 ],
                                 "type": "basic"
