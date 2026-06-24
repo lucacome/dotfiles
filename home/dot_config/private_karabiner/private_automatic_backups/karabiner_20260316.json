@@ -1,24 +1,9 @@
 {
+    "global": { "show_in_menu_bar": false },
     "profiles": [
         {
             "complex_modifications": {
                 "rules": [
-                    {
-                        "description": "Fn -> Control (Built-in Keyboard)",
-                        "manipulators": [
-                            {
-                                "conditions": [
-                                    {
-                                        "identifiers": [{ "is_built_in_keyboard": true }],
-                                        "type": "device_if"
-                                    }
-                                ],
-                                "from": { "key_code": "fn" },
-                                "to": [{ "key_code": "left_control" }],
-                                "type": "basic"
-                            }
-                        ]
-                    },
                     {
                         "description": "Hyper Key (⌃⌥⇧⌘)",
                         "manipulators": [
@@ -187,12 +172,28 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Open https://claude.ai",
+                                "description": "Open https://bsky.app/",
                                 "from": {
-                                    "key_code": "c",
+                                    "key_code": "t",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open https://claude.ai" }],
+                                "to": [{ "shell_command": "open https://bsky.app/" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "hyper_sublayer_b",
+                                        "type": "variable_if",
+                                        "value": 1
+                                    }
+                                ],
+                                "description": "Open https://facebook.com",
+                                "from": {
+                                    "key_code": "f",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [{ "shell_command": "open https://facebook.com" }],
                                 "type": "basic"
                             },
                             {
@@ -219,12 +220,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Open https://9to5mac.com/",
+                                "description": "Open https://hashnode.com/draft",
                                 "from": {
-                                    "key_code": "m",
+                                    "key_code": "h",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open https://9to5mac.com/" }],
+                                "to": [{ "shell_command": "open https://hashnode.com/draft" }],
                                 "type": "basic"
                             },
                             {
@@ -235,12 +236,28 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Open raycast://extensions/luolei/karakeep/createBookmark?List=Projects",
+                                "description": "Open https://linkedin.com",
+                                "from": {
+                                    "key_code": "l",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [{ "shell_command": "open https://linkedin.com" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "hyper_sublayer_b",
+                                        "type": "variable_if",
+                                        "value": 1
+                                    }
+                                ],
+                                "description": "Open https://mxstbr.com/cal",
                                 "from": {
                                     "key_code": "p",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open raycast://extensions/luolei/karakeep/createBookmark?List=Projects" }],
+                                "to": [{ "shell_command": "open https://mxstbr.com/cal" }],
                                 "type": "basic"
                             },
                             {
@@ -267,12 +284,28 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Open https://www.youtube.com",
+                                "description": "Open https://news.ycombinator.com",
                                 "from": {
                                     "key_code": "y",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open https://www.youtube.com" }],
+                                "to": [{ "shell_command": "open https://news.ycombinator.com" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "hyper_sublayer_b",
+                                        "type": "variable_if",
+                                        "value": 1
+                                    }
+                                ],
+                                "description": "Open https://9to5mac.com",
+                                "from": {
+                                    "key_code": "m",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [{ "shell_command": "open https://9to5mac.com" }],
                                 "type": "basic"
                             }
                         ]
@@ -386,12 +419,140 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Open  -a 'Finder.app' ~/Downloads",
+                                "description": "Open -a 'Discord.app'",
                                 "from": {
                                     "key_code": "d",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open  -a 'Finder.app' ~/Downloads" }],
+                                "to": [{ "shell_command": "open -a 'Discord.app'" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "hyper_sublayer_o",
+                                        "type": "variable_if",
+                                        "value": 1
+                                    }
+                                ],
+                                "description": "Open -a 'Slack.app'",
+                                "from": {
+                                    "key_code": "s",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [{ "shell_command": "open -a 'Slack.app'" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "hyper_sublayer_o",
+                                        "type": "variable_if",
+                                        "value": 1
+                                    }
+                                ],
+                                "description": "Open -a 'Superhuman.app'",
+                                "from": {
+                                    "key_code": "e",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [{ "shell_command": "open -a 'Superhuman.app'" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "hyper_sublayer_o",
+                                        "type": "variable_if",
+                                        "value": 1
+                                    }
+                                ],
+                                "description": "Open -a 'Notion.app'",
+                                "from": {
+                                    "key_code": "n",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [{ "shell_command": "open -a 'Notion.app'" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "hyper_sublayer_o",
+                                        "type": "variable_if",
+                                        "value": 1
+                                    }
+                                ],
+                                "description": "Open -a 'Ghostty.app'",
+                                "from": {
+                                    "key_code": "t",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [{ "shell_command": "open -a 'Ghostty.app'" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "hyper_sublayer_o",
+                                        "type": "variable_if",
+                                        "value": 1
+                                    }
+                                ],
+                                "description": "Open notion://www.notion.so/stellatehq/7b33b924746647499d906c55f89d5026",
+                                "from": {
+                                    "key_code": "h",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [{ "shell_command": "open notion://www.notion.so/stellatehq/7b33b924746647499d906c55f89d5026" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "hyper_sublayer_o",
+                                        "type": "variable_if",
+                                        "value": 1
+                                    }
+                                ],
+                                "description": "Open -a 'zoom.us.app'",
+                                "from": {
+                                    "key_code": "z",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [{ "shell_command": "open -a 'zoom.us.app'" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "hyper_sublayer_o",
+                                        "type": "variable_if",
+                                        "value": 1
+                                    }
+                                ],
+                                "description": "Open -a 'Music.app'",
+                                "from": {
+                                    "key_code": "m",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [{ "shell_command": "open -a 'Music.app'" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "hyper_sublayer_o",
+                                        "type": "variable_if",
+                                        "value": 1
+                                    }
+                                ],
+                                "description": "Open -a 'Reflect.app'",
+                                "from": {
+                                    "key_code": "r",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [{ "shell_command": "open -a 'Reflect.app'" }],
                                 "type": "basic"
                             },
                             {
@@ -434,12 +595,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Open -a 'Music.app'",
+                                "description": "Open -a 'iA Presenter.app'",
                                 "from": {
-                                    "key_code": "m",
+                                    "key_code": "a",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -a 'Music.app'" }],
+                                "to": [{ "shell_command": "open -a 'iA Presenter.app'" }],
                                 "type": "basic"
                             },
                             {
@@ -450,60 +611,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Open -a 'Bitwarden.app'",
+                                "description": "Open -a 'WhatsApp.app'",
                                 "from": {
-                                    "key_code": "p",
+                                    "key_code": "w",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -a 'Bitwarden.app'" }],
-                                "type": "basic"
-                            },
-                            {
-                                "conditions": [
-                                    {
-                                        "name": "hyper_sublayer_o",
-                                        "type": "variable_if",
-                                        "value": 1
-                                    }
-                                ],
-                                "description": "Open -a 'Discord.app'",
-                                "from": {
-                                    "key_code": "r",
-                                    "modifiers": { "optional": ["any"] }
-                                },
-                                "to": [{ "shell_command": "open -a 'Discord.app'" }],
-                                "type": "basic"
-                            },
-                            {
-                                "conditions": [
-                                    {
-                                        "name": "hyper_sublayer_o",
-                                        "type": "variable_if",
-                                        "value": 1
-                                    }
-                                ],
-                                "description": "Open -a 'Signal.app'",
-                                "from": {
-                                    "key_code": "s",
-                                    "modifiers": { "optional": ["any"] }
-                                },
-                                "to": [{ "shell_command": "open -a 'Signal.app'" }],
-                                "type": "basic"
-                            },
-                            {
-                                "conditions": [
-                                    {
-                                        "name": "hyper_sublayer_o",
-                                        "type": "variable_if",
-                                        "value": 1
-                                    }
-                                ],
-                                "description": "Open -a 'Ghostty.app'",
-                                "from": {
-                                    "key_code": "t",
-                                    "modifiers": { "optional": ["any"] }
-                                },
-                                "to": [{ "shell_command": "open -a 'Ghostty.app'" }],
+                                "to": [{ "shell_command": "open -a 'WhatsApp.app'" }],
                                 "type": "basic"
                             },
                             {
@@ -530,44 +643,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Open -a 'Whatsapp.app'",
+                                "description": "Open raycast://extensions/stellate/mxstbr-commands/open-mxs-is-shortlink",
                                 "from": {
-                                    "key_code": "w",
+                                    "key_code": "l",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -a 'Whatsapp.app'" }],
-                                "type": "basic"
-                            },
-                            {
-                                "conditions": [
-                                    {
-                                        "name": "hyper_sublayer_o",
-                                        "type": "variable_if",
-                                        "value": 1
-                                    }
-                                ],
-                                "description": "Open -a 'System Settings.app'",
-                                "from": {
-                                    "key_code": "y",
-                                    "modifiers": { "optional": ["any"] }
-                                },
-                                "to": [{ "shell_command": "open -a 'System Settings.app'" }],
-                                "type": "basic"
-                            },
-                            {
-                                "conditions": [
-                                    {
-                                        "name": "hyper_sublayer_o",
-                                        "type": "variable_if",
-                                        "value": 1
-                                    }
-                                ],
-                                "description": "Open -a 'zoom.us.app'",
-                                "from": {
-                                    "key_code": "z",
-                                    "modifiers": { "optional": ["any"] }
-                                },
-                                "to": [{ "shell_command": "open -a 'zoom.us.app'" }],
+                                "to": [{ "shell_command": "open raycast://extensions/stellate/mxstbr-commands/open-mxs-is-shortlink" }],
                                 "type": "basic"
                             }
                         ]
@@ -649,12 +730,65 @@
                                         "value": 1
                                     }
                                 ],
+                                "description": "Window: Hide",
+                                "from": {
+                                    "key_code": "semicolon",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [
+                                    {
+                                        "key_code": "h",
+                                        "modifiers": ["right_command"]
+                                    }
+                                ],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "hyper_sublayer_w",
+                                        "type": "variable_if",
+                                        "value": 1
+                                    }
+                                ],
+                                "description": "Window: previous-display",
+                                "from": {
+                                    "key_code": "y",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [{ "shell_command": "open -g rectangle://execute-action?name=previous-display" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "hyper_sublayer_w",
+                                        "type": "variable_if",
+                                        "value": 1
+                                    }
+                                ],
+                                "description": "Window: next-display",
+                                "from": {
+                                    "key_code": "o",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [{ "shell_command": "open -g rectangle://execute-action?name=next-display" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "hyper_sublayer_w",
+                                        "type": "variable_if",
+                                        "value": 1
+                                    }
+                                ],
                                 "description": "Window: top-half",
                                 "from": {
                                     "key_code": "k",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/top-half" }],
+                                "to": [{ "shell_command": "open -g rectangle://execute-action?name=top-half" }],
                                 "type": "basic"
                             },
                             {
@@ -670,7 +804,7 @@
                                     "key_code": "j",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/bottom-half" }],
+                                "to": [{ "shell_command": "open -g rectangle://execute-action?name=bottom-half" }],
                                 "type": "basic"
                             },
                             {
@@ -686,7 +820,7 @@
                                     "key_code": "h",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/left-half" }],
+                                "to": [{ "shell_command": "open -g rectangle://execute-action?name=left-half" }],
                                 "type": "basic"
                             },
                             {
@@ -702,7 +836,7 @@
                                     "key_code": "l",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/right-half" }],
+                                "to": [{ "shell_command": "open -g rectangle://execute-action?name=right-half" }],
                                 "type": "basic"
                             },
                             {
@@ -718,7 +852,7 @@
                                     "key_code": "f",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/maximize" }],
+                                "to": [{ "shell_command": "open -g rectangle://execute-action?name=maximize" }],
                                 "type": "basic"
                             },
                             {
@@ -729,12 +863,101 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Window: almost-maximize",
+                                "description": "Window: Previous Tab",
                                 "from": {
-                                    "key_code": "c",
+                                    "key_code": "u",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/almost-maximize" }],
+                                "to": [
+                                    {
+                                        "key_code": "tab",
+                                        "modifiers": ["right_control", "right_shift"]
+                                    }
+                                ],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "hyper_sublayer_w",
+                                        "type": "variable_if",
+                                        "value": 1
+                                    }
+                                ],
+                                "description": "Window: Next Tab",
+                                "from": {
+                                    "key_code": "i",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [
+                                    {
+                                        "key_code": "tab",
+                                        "modifiers": ["right_control"]
+                                    }
+                                ],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "hyper_sublayer_w",
+                                        "type": "variable_if",
+                                        "value": 1
+                                    }
+                                ],
+                                "description": "Window: Next Window",
+                                "from": {
+                                    "key_code": "n",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [
+                                    {
+                                        "key_code": "grave_accent_and_tilde",
+                                        "modifiers": ["right_command"]
+                                    }
+                                ],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "hyper_sublayer_w",
+                                        "type": "variable_if",
+                                        "value": 1
+                                    }
+                                ],
+                                "description": "Window: Back",
+                                "from": {
+                                    "key_code": "b",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [
+                                    {
+                                        "key_code": "open_bracket",
+                                        "modifiers": ["right_command"]
+                                    }
+                                ],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "hyper_sublayer_w",
+                                        "type": "variable_if",
+                                        "value": 1
+                                    }
+                                ],
+                                "description": "Window: Forward",
+                                "from": {
+                                    "key_code": "m",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [
+                                    {
+                                        "key_code": "close_bracket",
+                                        "modifiers": ["right_command"]
+                                    }
+                                ],
                                 "type": "basic"
                             }
                         ]
@@ -926,12 +1149,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Open raycast://extensions/tonka3000/homeassistant/lights",
+                                "description": "Open raycast://extensions/thomas/elgato-key-light/toggle?launchType=background",
                                 "from": {
                                     "key_code": "e",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open raycast://extensions/tonka3000/homeassistant/lights" }],
+                                "to": [{ "shell_command": "open raycast://extensions/thomas/elgato-key-light/toggle?launchType=background" }],
                                 "type": "basic"
                             },
                             {
@@ -958,12 +1181,48 @@
                                         "value": 1
                                     }
                                 ],
+                                "description": "Open raycast://extensions/raycast/system/toggle-system-appearance",
+                                "from": {
+                                    "key_code": "t",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [{ "shell_command": "open raycast://extensions/raycast/system/toggle-system-appearance" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "hyper_sublayer_s",
+                                        "type": "variable_if",
+                                        "value": 1
+                                    }
+                                ],
                                 "description": "Open raycast://extensions/raycast/system/open-camera",
                                 "from": {
                                     "key_code": "c",
                                     "modifiers": { "optional": ["any"] }
                                 },
                                 "to": [{ "shell_command": "open raycast://extensions/raycast/system/open-camera" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "hyper_sublayer_s",
+                                        "type": "variable_if",
+                                        "value": 1
+                                    }
+                                ],
+                                "from": {
+                                    "key_code": "v",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [
+                                    {
+                                        "key_code": "spacebar",
+                                        "modifiers": ["left_option"]
+                                    }
+                                ],
                                 "type": "basic"
                             }
                         ]
@@ -1111,8 +1370,8 @@
                                 },
                                 "to": [
                                     {
-                                        "key_code": "k",
-                                        "modifiers": ["right_shift", "right_command"]
+                                        "key_code": "f",
+                                        "modifiers": ["right_control"]
                                     }
                                 ],
                                 "type": "basic"
@@ -1132,7 +1391,7 @@
                                 "to": [
                                     {
                                         "key_code": "j",
-                                        "modifiers": ["right_shift", "right_command"]
+                                        "modifiers": ["right_control"]
                                     }
                                 ],
                                 "type": "basic"
@@ -1151,7 +1410,7 @@
                                 },
                                 "to": [
                                     {
-                                        "key_code": "l",
+                                        "key_code": "d",
                                         "modifiers": ["right_shift", "right_command"]
                                     }
                                 ],
@@ -1382,6 +1641,38 @@
                                         "value": 1
                                     }
                                 ],
+                                "description": "Open raycast://extensions/VladCuciureanu/toothpick/connect-favorite-device-1",
+                                "from": {
+                                    "key_code": "1",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [{ "shell_command": "open raycast://extensions/VladCuciureanu/toothpick/connect-favorite-device-1" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "hyper_sublayer_r",
+                                        "type": "variable_if",
+                                        "value": 1
+                                    }
+                                ],
+                                "description": "Open raycast://extensions/VladCuciureanu/toothpick/connect-favorite-device-2",
+                                "from": {
+                                    "key_code": "2",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [{ "shell_command": "open raycast://extensions/VladCuciureanu/toothpick/connect-favorite-device-2" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "hyper_sublayer_r",
+                                        "type": "variable_if",
+                                        "value": 1
+                                    }
+                                ],
                                 "description": "Open raycast://extensions/thomas/color-picker/pick-color",
                                 "from": {
                                     "key_code": "c",
@@ -1414,6 +1705,22 @@
                                         "value": 1
                                     }
                                 ],
+                                "description": "Open raycast://extensions/stellate/mxstbr-commands/create-mxs-is-shortlink",
+                                "from": {
+                                    "key_code": "l",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [{ "shell_command": "open raycast://extensions/stellate/mxstbr-commands/create-mxs-is-shortlink" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "hyper_sublayer_r",
+                                        "type": "variable_if",
+                                        "value": 1
+                                    }
+                                ],
                                 "description": "Open raycast://extensions/raycast/emoji-symbols/search-emoji-symbols",
                                 "from": {
                                     "key_code": "e",
@@ -1430,12 +1737,76 @@
                                         "value": 1
                                     }
                                 ],
+                                "description": "Open raycast://extensions/raycast/raycast/confetti",
+                                "from": {
+                                    "key_code": "p",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [{ "shell_command": "open raycast://extensions/raycast/raycast/confetti" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "hyper_sublayer_r",
+                                        "type": "variable_if",
+                                        "value": 1
+                                    }
+                                ],
+                                "description": "Open raycast://extensions/raycast/raycast-ai/ai-chat",
+                                "from": {
+                                    "key_code": "a",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [{ "shell_command": "open raycast://extensions/raycast/raycast-ai/ai-chat" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "hyper_sublayer_r",
+                                        "type": "variable_if",
+                                        "value": 1
+                                    }
+                                ],
+                                "description": "Open raycast://extensions/peduarte/silent-mention/index",
+                                "from": {
+                                    "key_code": "s",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [{ "shell_command": "open raycast://extensions/peduarte/silent-mention/index" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "hyper_sublayer_r",
+                                        "type": "variable_if",
+                                        "value": 1
+                                    }
+                                ],
                                 "description": "Open raycast://extensions/raycast/clipboard-history/clipboard-history",
                                 "from": {
                                     "key_code": "h",
                                     "modifiers": { "optional": ["any"] }
                                 },
                                 "to": [{ "shell_command": "open raycast://extensions/raycast/clipboard-history/clipboard-history" }],
+                                "type": "basic"
+                            }
+                        ]
+                    },
+                    {
+                        "description": "Change Backspace to Spacebar when Minecraft is focused",
+                        "manipulators": [
+                            {
+                                "conditions": [
+                                    {
+                                        "file_paths": ["^/Users/mxstbr/Library/Application Support/minecraft/runtime/java-runtime-gamma/mac-os-arm64/java-runtime-gamma/jre.bundle/Contents/Home/bin/java$"],
+                                        "type": "frontmost_application_if"
+                                    }
+                                ],
+                                "from": { "key_code": "delete_or_backspace" },
+                                "to": [{ "key_code": "spacebar" }],
                                 "type": "basic"
                             }
                         ]
