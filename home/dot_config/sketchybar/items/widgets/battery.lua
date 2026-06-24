@@ -62,13 +62,13 @@ local function update_battery_widget()
     local icon = "!"
     local charge = nil
 
-    local found, _, charge_str = batt_info:find("(%d+)%%")
-    if found then
+    local charge_str = batt_info:match("(%d+)%%")
+    if charge_str then
       charge = tonumber(charge_str)
     end
 
     local color = colors.green
-    local charging, _, _ = batt_info:find("AC Power")
+    local charging = batt_info:find("AC Power")
 
     if charging then
       icon = icons.battery.charging

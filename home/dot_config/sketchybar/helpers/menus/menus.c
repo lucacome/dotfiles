@@ -3,20 +3,7 @@
 
 void ax_init()
 {
-    const void *keys[] = {kAXTrustedCheckOptionPrompt};
-    const void *values[] = {kCFBooleanTrue};
-
-    CFDictionaryRef options;
-    options = CFDictionaryCreate(kCFAllocatorDefault,
-                                 keys,
-                                 values,
-                                 sizeof(keys) / sizeof(*keys),
-                                 &kCFCopyStringDictionaryKeyCallBacks,
-                                 &kCFTypeDictionaryValueCallBacks);
-
-    bool trusted = AXIsProcessTrustedWithOptions(options);
-    CFRelease(options);
-    if (!trusted)
+    if (!AXIsProcessTrusted())
         exit(1);
 }
 

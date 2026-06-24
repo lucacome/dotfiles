@@ -11,147 +11,58 @@ local shell_quote = utils.shell_quote
 local spaces = {}
 local space_brackets = {}
 local space_paddings = {}
-local space_popups = {}
 local workspace_order = {}
-local refresh_generation = 0
-local refresh_workspaces
-local cached_other_visible_workspaces = {}
-local cached_visible_set = {}
-local cached_has_apps = {}   -- true for each workspace that has ≥1 window
-local cached_focused = nil
-local fixed_workspaces = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "Z", "X", "C", "V", "B", "N", "M" }
+local aerospace_waking = false
 
-local letter_keyboard_rank = { Z = 10, X = 11, C = 12, V = 13, B = 14, N = 15, M = 16 }
+local fixed_workspaces = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "Z", "X", "C", "V", "B", "N", "M" }
 local ignored_apps = { Finder = true }
 
-local function workspace_key(value)
-  local k = trim(value)
-  if k == "" then return nil end
-  return k
+local function ws_name(kind, ws)
+  return "space." .. kind .. "." .. ws:gsub("[^%w_]", "_")
 end
 
-local function list_equals(left, right)
-  if #left ~= #right then return false end
-  for i = 1, #left do
-    if left[i] ~= right[i] then return false end
+local function icon_line(apps)
+  local s = ""
+  for _, app in ipairs(apps) do
+    s = s .. (app_icons[app] or app_icons["Default"] or "")
   end
-  return true
+  return s ~= "" and s or " —"
 end
 
-local function sort_workspaces(workspaces)
-  local indexed = {}
-
-  for index, ws in ipairs(workspaces) do
-    local upper = ws:upper()
-    local num = tonumber(ws)
-    local rank = letter_keyboard_rank[upper]
-
-    local group = 4
-    local key = index
-
-    if num then
-      group = 1
-      key = num
-    elseif #upper == 1 and rank then
-      group = 2
-      key = rank
-    elseif #upper == 1 then
-      group = 3
-      key = string.byte(upper)
-    end
-
-    table.insert(indexed, {
-      ws = ws,
-      idx = index,
-      group = group,
-      key = key,
-    })
-  end
-
-  table.sort(indexed, function(a, b)
-    if a.group ~= b.group then return a.group < b.group end
-    if a.key ~= b.key then return a.key < b.key end
-    return a.idx < b.idx
-  end)
-
-  local sorted = {}
-  for _, item in ipairs(indexed) do
-    table.insert(sorted, item.ws)
-  end
-  return sorted
-end
-
-local function ws_name(kind, workspace)
-  return "space." .. kind .. "." .. workspace:gsub("[^%w_]", "_")
-end
-
-local function icon_line_from_apps(apps)
-  local icon_line = ""
-  for _, app in ipairs(apps or {}) do
-    icon_line = icon_line .. (app_icons[app] or app_icons["Default"] or "")
-  end
-  return icon_line ~= "" and icon_line or " —"
-end
-
-local function set_selected_space(focused, other_visible_workspaces)
-  local focused_key = workspace_key(focused)
-  other_visible_workspaces = other_visible_workspaces or {}
+local function set_selected(focused)
   for _, ws in ipairs(workspace_order) do
-    local selected = (ws == focused_key)
-    local visible_elsewhere = other_visible_workspaces[ws] == true and not selected
-    local icon_color = selected and colors.green or (visible_elsewhere and colors.red or colors.white)
-    local item_border_color = selected and colors.black or colors.bg2
-    local bracket_border_color = selected and colors.green or (visible_elsewhere and colors.red or colors.bg2)
+    local sel = (ws == focused)
     if spaces[ws] then
       spaces[ws]:set({
-        icon = {
-          highlight = false,
-          color = icon_color,
-          highlight_color = colors.red,
-        },
-        label = { highlight = selected },
-        background = { border_color = item_border_color },
+        icon = { color = sel and colors.green or colors.white },
+        label = { highlight = sel },
+        background = { border_color = sel and colors.black or colors.bg2 },
       })
     end
     if space_brackets[ws] then
       space_brackets[ws]:set({
-        background = { border_color = bracket_border_color },
+        background = { border_color = sel and colors.green or colors.bg2 },
       })
     end
   end
 end
 
-local function set_workspace_visible(workspace, visible)
-  if spaces[workspace] then
-    spaces[workspace]:set({ drawing = visible })
-  end
-  if space_brackets[workspace] then
-    space_brackets[workspace]:set({ drawing = visible })
-  end
-  if space_paddings[workspace] then
-    space_paddings[workspace]:set({ width = visible and settings.group_paddings or 0 })
+local function set_visible(ws, visible)
+  if spaces[ws] then spaces[ws]:set({ drawing = visible }) end
+  if space_brackets[ws] then space_brackets[ws]:set({ drawing = visible }) end
+  if space_paddings[ws] then
+    space_paddings[ws]:set({ width = visible and settings.group_paddings or 0 })
   end
 end
 
-local function remove_workspace_items()
-  for ws, _ in pairs(space_popups) do sbar.remove(ws_name("popup", ws)) end
-  for ws, _ in pairs(spaces) do sbar.remove(ws_name("item", ws)) end
-  for ws, _ in pairs(space_brackets) do sbar.remove(ws_name("bracket", ws)) end
-  for ws, _ in pairs(space_paddings) do sbar.remove(ws_name("padding", ws)) end
-  spaces = {}
-  space_brackets = {}
-  space_paddings = {}
-  space_popups = {}
-end
+local refresh_workspaces
 
-local function create_workspace_item(workspace)
-  local item_name = ws_name("item", workspace)
-
-  local space = sbar.add("item", item_name, {
+local function create_workspace_item(ws)
+  local space = sbar.add("item", ws_name("item", ws), {
     drawing = false,
     icon = {
       font = { family = settings.font.numbers },
-      string = workspace,
+      string = ws,
       padding_left = 15,
       padding_right = 8,
       color = colors.white,
@@ -172,303 +83,103 @@ local function create_workspace_item(workspace)
       height = 26,
       border_color = colors.black,
     },
-    popup = { background = { border_width = 5, border_color = colors.black } }
   })
+  spaces[ws] = space
 
-  spaces[workspace] = space
-
-  local space_bracket = sbar.add("bracket", ws_name("bracket", workspace), { space.name }, {
+  space_brackets[ws] = sbar.add("bracket", ws_name("bracket", ws), { space.name }, {
     drawing = false,
     background = {
       color = colors.transparent,
       border_color = colors.bg2,
       height = 28,
-      border_width = 1
-    }
+      border_width = 1,
+    },
   })
-  space_brackets[workspace] = space_bracket
 
-  local padding = sbar.add("item", ws_name("padding", workspace), {
+  space_paddings[ws] = sbar.add("item", ws_name("padding", ws), {
     script = "",
     width = 0,
   })
-  space_paddings[workspace] = padding
-
-  local space_popup = sbar.add("item", ws_name("popup", workspace), {
-    position = "popup." .. space.name,
-    padding_left = 5,
-    padding_right = 0,
-    background = {
-      drawing = true,
-      image = {
-        corner_radius = 9,
-        scale = 0.2,
-      }
-    }
-  })
-  space_popups[workspace] = space_popup
 
   space:subscribe("mouse.clicked", function(env)
-    if env.BUTTON == "other" then
-      space_popup:set({ background = { image = "space." .. workspace } })
-      space:set({ popup = { drawing = "toggle" } })
-      return
+    if env.BUTTON == "left" then
+      sbar.exec("aerospace workspace " .. shell_quote(ws))
     end
-
-    if env.BUTTON == "right" then
-      local target = nil
-      for _, ws in ipairs(workspace_order) do
-        if ws ~= workspace then
-          target = ws
-          break
-        end
-      end
-
-      if target then
-        local move_cmd = "aerospace list-windows --workspace " .. shell_quote(workspace) .. " --format '%{window-id}'"
-        sbar.exec(move_cmd, function(ids_out)
-          for _, wid in ipairs(parse_lines(ids_out)) do
-            sbar.exec("aerospace move-node-to-workspace " .. shell_quote(target) .. " --window-id " .. shell_quote(wid))
-          end
-          refresh_workspaces()
-        end)
-      end
-    else
-      sbar.exec("aerospace workspace " .. shell_quote(workspace), function(_)
-        refresh_workspaces()
-      end)
-    end
-  end)
-
-  space:subscribe("mouse.exited", function(_)
-    space:set({ popup = { drawing = false } })
   end)
 end
 
-local function initialize_workspace_items()
-  remove_workspace_items()
-  workspace_order = {}
+local function initialize()
+  for _, ws in ipairs(workspace_order) do
+    sbar.remove(ws_name("item", ws))
+    sbar.remove(ws_name("bracket", ws))
+    sbar.remove(ws_name("padding", ws))
+  end
+  spaces, space_brackets, space_paddings, workspace_order = {}, {}, {}, {}
   for _, ws in ipairs(fixed_workspaces) do
     table.insert(workspace_order, ws)
     create_workspace_item(ws)
-    set_workspace_visible(ws, false)
   end
 end
 
-local function move_app_to_end(apps, focused_app)
-  if not focused_app or focused_app == "" then return apps end
-
-  local kept = {}
-  local moved = false
-  for _, app in ipairs(apps) do
-    if app == focused_app and not moved then
-      moved = true
-    else
-      table.insert(kept, app)
-    end
-  end
-
-  if moved then
-    table.insert(kept, focused_app)
-    return kept
-  end
-
-  return apps
-end
-
-refresh_workspaces = function(callback)
-  refresh_generation = refresh_generation + 1
-  local generation = refresh_generation
-
+refresh_workspaces = function()
   sbar.exec("aerospace list-workspaces --focused --format '%{workspace}'", function(focused_out)
-    if generation ~= refresh_generation then return end
-    local focused = workspace_key((parse_lines(focused_out))[1])
+    local focused = trim((parse_lines(focused_out))[1] or "")
+    if focused == "" then focused = nil end
 
-    -- AeroSpace hasn't reconnected yet after a wake (focused query returned
-    -- nothing). Only bail out when we have prior cached state to restore;
-    -- on a fresh start cached_focused is nil and the nested calls should run
-    -- so that workspaces with apps still become visible.
-    if focused == nil and cached_focused ~= nil then
-      for _, ws in ipairs(workspace_order) do
-        set_workspace_visible(ws, cached_visible_set[ws] == true)
-      end
-      set_selected_space(cached_focused, cached_other_visible_workspaces)
-      sbar.delay(5, function()
-        -- Only retry if no fresher refresh has been triggered in the meantime.
-        if generation == refresh_generation then
-          refresh_workspaces(callback)
-        end
-      end)
-      return
-    end
+    sbar.exec("aerospace list-windows --all --format '%{workspace}\\t%{app-name}'", function(wins_out)
+      local apps_by_ws = {}
+      for _, ws in ipairs(workspace_order) do apps_by_ws[ws] = {} end
 
-    sbar.exec("aerospace list-windows --focused --format '%{app-name}' 2>/dev/null", function(focused_app_out)
-      if generation ~= refresh_generation then return end
-      local focused_app = (parse_lines(focused_app_out))[1]
-      if ignored_apps[focused_app] then focused_app = nil end
-
-      sbar.exec("aerospace list-windows --all --format '%{workspace}\\t%{app-name}'", function(all_windows_out)
-        if generation ~= refresh_generation then return end
-
-        local apps_by_ws = {}
-        for _, ws in ipairs(workspace_order) do
-          apps_by_ws[ws] = {}
-        end
-
-        for _, line in ipairs(parse_lines(all_windows_out)) do
-          -- AeroSpace outputs the literal two-char sequence \t (0x5c 0x74)
-          -- between fields; it does NOT expand \t to a real tab character.
-          local ws, app = line:match("^(.-)\\t(.*)$")
-
-          ws = workspace_key(ws)
-          app = trim(app)
-
-          if ws and app ~= "" and not ignored_apps[app] and apps_by_ws[ws] then
+      for _, line in ipairs(parse_lines(wins_out)) do
+        local ws, app = line:match("^(.-)\\t(.*)$")
+        if ws then
+          ws = trim(ws)
+          app = trim(app or "")
+          if apps_by_ws[ws] and app ~= "" and not ignored_apps[app] then
             table.insert(apps_by_ws[ws], app)
           end
         end
+      end
 
-        local visible_set = {}
-        for _, ws in ipairs(workspace_order) do
-          local apps = apps_by_ws[ws] or {}
-          cached_has_apps[ws] = #apps > 0
-          if #apps > 0 or (focused and ws == focused) then
-            visible_set[ws] = true
-          end
+      for _, ws in ipairs(workspace_order) do
+        local apps = apps_by_ws[ws] or {}
+        set_visible(ws, #apps > 0 or ws == focused)
+        if spaces[ws] then
+          spaces[ws]:set({ label = icon_line(apps) })
         end
+      end
 
-        for _, space_name in ipairs(workspace_order) do
-          local apps = apps_by_ws[space_name] or {}
-          if spaces[space_name] then
-            spaces[space_name]:set({ label = icon_line_from_apps(apps) })
-          end
-        end
-
-        set_selected_space(focused, cached_other_visible_workspaces)
-
-        local monitor_visibility_cmd = "focused=$(aerospace list-monitors --focused --format '%{monitor-id}' 2>/dev/null); "
-          .. "for m in $(aerospace list-monitors --format '%{monitor-id}' 2>/dev/null); do "
-          .. "ws=$(aerospace list-workspaces --monitor \"$m\" --visible --format '%{workspace}' 2>/dev/null | head -n1); "
-          .. "printf '%s\\t%s\\n' \"$m\" \"$ws\"; "
-          .. "done; "
-          .. "printf 'FOCUSED\\t%s\\n' \"$focused\""
-
-        sbar.exec(monitor_visibility_cmd, function(monitor_visibility_out)
-          if generation ~= refresh_generation then return end
-
-          local focused_monitor = nil
-          local visible_by_monitor = {}
-
-          for _, line in ipairs(parse_lines(monitor_visibility_out)) do
-            local monitor_id_raw, value_raw = line:match("^(.-)\t(.*)$")
-            local key = trim(monitor_id_raw)
-            local value = trim(value_raw)
-
-            if key == "FOCUSED" then
-              focused_monitor = tonumber(value)
-            else
-              local monitor_id = tonumber(key)
-              if monitor_id and value ~= "" then
-                visible_by_monitor[monitor_id] = workspace_key(value)
-              end
-            end
-          end
-
-          local other_visible_workspaces = {}
-          if focused_monitor then
-            for monitor_id, ws in pairs(visible_by_monitor) do
-              if monitor_id ~= focused_monitor and ws then
-                other_visible_workspaces[ws] = true
-              end
-            end
-          end
-
-          cached_other_visible_workspaces = other_visible_workspaces
-          cached_focused = focused
-
-          local new_visible_set = {}
-          for _, ws in ipairs(workspace_order) do
-            new_visible_set[ws] = visible_set[ws] or other_visible_workspaces[ws] == true
-          end
-          cached_visible_set = new_visible_set
-
-          for _, ws in ipairs(workspace_order) do
-            set_workspace_visible(ws, new_visible_set[ws])
-          end
-
-          set_selected_space(focused, other_visible_workspaces)
-
-          if callback then callback(focused) end
-
-        end)
-      end)
+      if focused then set_selected(focused) end
     end)
   end)
 end
 
-local workspace_refresh_observer = sbar.add("item", {
-  drawing = false,
-  updates = true,
-})
+local observer = sbar.add("item", { drawing = false, updates = true })
 
 sbar.add("event", "aerospace_workspace_change")
 sbar.add("event", "aerospace_focus_changed")
 
-workspace_refresh_observer:subscribe("space_windows_change", function(_)
-  refresh_workspaces()
+observer:subscribe("space_windows_change", function()
+  if not aerospace_waking then refresh_workspaces() end
 end)
 
--- Fired by AeroSpace on-focus-changed for every focus/window-move event.
--- Catches window moves between workspaces that don't trigger a workspace switch.
-workspace_refresh_observer:subscribe("aerospace_focus_changed", function(_)
-  refresh_workspaces()
+observer:subscribe("aerospace_focus_changed", function()
+  if not aerospace_waking then refresh_workspaces() end
 end)
 
-workspace_refresh_observer:subscribe("aerospace_workspace_change", function(env)
-  local focused = workspace_key(env.FOCUSED_WORKSPACE)
-  if not focused then return end
-
-  cached_focused = focused
-
-  -- Apply the focus change immediately from cached data so the highlight
-  -- moves instantly without waiting for async shell calls.
-  local new_visible_set = {}
-  for _, ws in ipairs(workspace_order) do
-    new_visible_set[ws] = (ws == focused)
-        or (cached_has_apps[ws] == true)
-        or (cached_other_visible_workspaces[ws] == true)
-  end
-  cached_visible_set = new_visible_set
-
-  for _, ws in ipairs(workspace_order) do
-    set_workspace_visible(ws, new_visible_set[ws])
-  end
-
-  set_selected_space(focused, cached_other_visible_workspaces)
-
-  -- Also do a full async refresh to pick up any window changes.
-  -- AeroSpace fires aerospace_workspace_change when windows are moved
-  -- between workspaces (not just on focus switches), and space_windows_change
-  -- is a macOS Mission Control event that does NOT fire for AeroSpace virtual
-  -- workspace moves. Without this, app icons stay stale after a window move.
-  refresh_workspaces()
+observer:subscribe("aerospace_workspace_change", function()
+  if not aerospace_waking then refresh_workspaces() end
 end)
 
-workspace_refresh_observer:subscribe("system_woke", function(_)
-  -- Restore the last-known workspace layout immediately so spaces are
-  -- visible right away. Then wait a few seconds before querying AeroSpace —
-  -- it needs time to reconnect after wake, and querying it too early causes
-  -- the nil-focused bail-out to fire, which starts a 5-second retry loop.
-  for _, ws in ipairs(workspace_order) do
-    set_workspace_visible(ws, cached_visible_set[ws] == true)
-  end
-  set_selected_space(cached_focused, cached_other_visible_workspaces)
-  sbar.delay(4, function()
+observer:subscribe("system_woke", function()
+  aerospace_waking = true
+  sbar.delay(15, function()
+    aerospace_waking = false
     refresh_workspaces()
   end)
 end)
 
-initialize_workspace_items()
+initialize()
 
 local spaces_indicator = sbar.add("item", {
   padding_left = -3,
@@ -489,26 +200,18 @@ local spaces_indicator = sbar.add("item", {
   background = {
     color = colors.with_alpha(colors.grey, 0.0),
     border_color = colors.with_alpha(colors.bg1, 0.0),
-  }
+  },
 })
 
-spaces_indicator:subscribe("swap_menus_and_spaces", function(_)
+spaces_indicator:subscribe("swap_menus_and_spaces", function()
   local currently_on = spaces_indicator:query().icon.value == icons.switch.on
   spaces_indicator:set({
-    icon = currently_on and icons.switch.off or icons.switch.on
+    icon = currently_on and icons.switch.off or icons.switch.on,
   })
-  if not currently_on then
-    -- Immediately restore cached state so spaces appear without delay,
-    -- then refresh in the background to pick up any changes.
-    for _, ws in ipairs(workspace_order) do
-      set_workspace_visible(ws, cached_visible_set[ws] == true)
-    end
-    set_selected_space(cached_focused, cached_other_visible_workspaces)
-    refresh_workspaces()
-  end
+  if not currently_on then refresh_workspaces() end
 end)
 
-spaces_indicator:subscribe("mouse.entered", function(_)
+spaces_indicator:subscribe("mouse.entered", function()
   sbar.animate("tanh", 30, function()
     spaces_indicator:set({
       background = {
@@ -516,12 +219,12 @@ spaces_indicator:subscribe("mouse.entered", function(_)
         border_color = { alpha = 1.0 },
       },
       icon = { color = colors.bg1 },
-      label = { width = "dynamic" }
+      label = { width = "dynamic" },
     })
   end)
 end)
 
-spaces_indicator:subscribe("mouse.exited", function(_)
+spaces_indicator:subscribe("mouse.exited", function()
   sbar.animate("tanh", 30, function()
     spaces_indicator:set({
       background = {
@@ -529,12 +232,12 @@ spaces_indicator:subscribe("mouse.exited", function(_)
         border_color = { alpha = 0.0 },
       },
       icon = { color = colors.grey },
-      label = { width = 0 }
+      label = { width = 0 },
     })
   end)
 end)
 
-spaces_indicator:subscribe("mouse.clicked", function(_)
+spaces_indicator:subscribe("mouse.clicked", function()
   sbar.trigger("swap_menus_and_spaces")
 end)
 

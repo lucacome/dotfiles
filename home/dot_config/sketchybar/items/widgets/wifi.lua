@@ -10,54 +10,41 @@ local shell_quote = utils.shell_quote
 local active_interface = "en0"
 local active_service = "Wi-Fi"
 local active_is_wifi = true
+local waking = false
 local copy_label_to_clipboard
+local wifi  -- forward declaration so refresh_icon (defined below) can close over it
 
-local function restart_network_provider(interface)
-  sbar.exec("killall network_load >/dev/null 2>&1; $CONFIG_DIR/helpers/event_providers/network_load/bin/network_load " .. interface .. " network_update 2.0")
+local function restart_network_provider(iface)
+  sbar.exec("killall network_load >/dev/null 2>&1; $CONFIG_DIR/helpers/event_providers/network_load/bin/network_load "
+    .. shell_quote(iface) .. " network_update 2.0")
 end
 
-local function refresh_active_network(callback)
-  sbar.exec("route -n get default 2>/dev/null | awk '/interface:/{print $2; exit}'", function(default_if)
-    local iface = trim(default_if)
-    if iface == "" then iface = "en0" end
+local function normalize_speed(value)
+  local s = trim(value):gsub("%s+", " "):gsub("(%d)%s*(%a+[Pp][Ss])$", "%1 %2")
+  return s
+end
 
-    sbar.exec("networksetup -listallhardwareports", function(hw)
-      local service = "Ethernet"
-      local is_wifi = false
-      local current_port = nil
-
-      for line in tostring(hw):gmatch("[^\r\n]+") do
-        local port = line:match("^Hardware Port:%s*(.+)$")
-        if port then
-          current_port = trim(port)
-        else
-          local device = line:match("^Device:%s*(.+)$")
-          if device and trim(device) == iface then
-            service = current_port or service
-            local normalized_service = service:lower()
-            is_wifi = normalized_service:find("wifi", 1, true) ~= nil
-              or normalized_service:find("wi%-fi") ~= nil
-            break
-          end
-        end
-      end
-
-      active_is_wifi = is_wifi
-      active_service = service
-
-      if iface ~= active_interface then
-        active_interface = iface
-        restart_network_provider(active_interface)
-      end
-
-      if callback then callback() end
+local function refresh_icon()
+  if waking then return end
+  sbar.exec("route -n get default 2>/dev/null | awk '/interface:/{print $2; exit}'", function(out)
+    local iface = trim(out)
+    if iface ~= "" then active_interface = iface end
+    sbar.exec("ipconfig getifaddr " .. active_interface .. " 2>/dev/null", function(addr)
+      local connected = trim(addr) ~= ""
+      wifi:set({
+        icon = {
+          string = connected and (active_is_wifi and icons.wifi.connected or icons.wifi.ethernet)
+                             or icons.wifi.disconnected,
+          color = connected and colors.white or colors.red,
+        },
+      })
     end)
   end)
 end
 
-restart_network_provider(active_interface)
-
 local popup_width = 250
+
+sbar.add("item", { position = "right", width = settings.group_paddings })
 
 local wifi_up = sbar.add("item", "widgets.wifi1", {
   position = "right",
@@ -66,10 +53,7 @@ local wifi_up = sbar.add("item", "widgets.wifi1", {
   width = 86,
   icon = {
     padding_right = 0,
-    font = {
-      style = settings.font.style_map["Bold"],
-      size = 12.0,
-    },
+    font = { style = settings.font.style_map["Bold"], size = 12.0 },
     string = icons.wifi.upload,
   },
   label = {
@@ -93,10 +77,7 @@ local wifi_down = sbar.add("item", "widgets.wifi2", {
   width = 86,
   icon = {
     padding_right = 0,
-    font = {
-      style = settings.font.style_map["Bold"],
-      size = 12.0,
-    },
+    font = { style = settings.font.style_map["Bold"], size = 12.0 },
     string = icons.wifi.download,
   },
   label = {
@@ -113,12 +94,10 @@ local wifi_down = sbar.add("item", "widgets.wifi2", {
   y_offset = 0,
 })
 
-local wifi = sbar.add("item", "widgets.wifi.padding", {
+wifi = sbar.add("item", "widgets.wifi.padding", {
   position = "right",
   padding_right = 1,
-  icon = {
-    padding_right = 1,
-  },
+  icon = { padding_right = 1 },
   label = { drawing = false },
 })
 
@@ -128,14 +107,13 @@ local network_watcher = sbar.add("item", {
   update_freq = 5,
 })
 
--- Background around the item
 local wifi_bracket = sbar.add("bracket", "widgets.wifi.bracket", {
   wifi.name,
   wifi_up.name,
-  wifi_down.name
+  wifi_down.name,
 }, {
   background = { color = colors.bg1 },
-  popup = { align = "center", height = 30 }
+  popup = { align = "center", height = 30 },
 })
 
 local function info_row(label_str, default, label_extra)
@@ -151,144 +129,52 @@ end
 local ssid = sbar.add("item", {
   position = "popup." .. wifi_bracket.name,
   icon = {
-    font = {
-      style = settings.font.style_map["Bold"]
-    },
+    font = { style = settings.font.style_map["Bold"] },
     string = icons.wifi.ethernet,
   },
   width = popup_width,
   align = "center",
   label = {
-    font = {
-      size = 15,
-      style = settings.font.style_map["Bold"]
-    },
+    font = { size = 15, style = settings.font.style_map["Bold"] },
     max_chars = 18,
     string = "????????????",
   },
-  background = {
-    height = 2,
-    color = colors.grey,
-    y_offset = -15
-  }
+  background = { height = 2, color = colors.grey, y_offset = -15 },
 })
 
 local hostname = info_row("Hostname:", "????????????", { max_chars = 20 })
 local ip       = info_row("IP:", "???.???.???.???")
 local mask     = info_row("Subnet mask:", "???.???.???.???")
-
-local router  = info_row("Router:", "???.???.???.???")
-local iface   = info_row("Interface:", "en0")
-local service = info_row("Service:", "Wi-Fi")
+local router   = info_row("Router:", "???.???.???.???")
+local iface    = info_row("Interface:", "en0")
+local service  = info_row("Service:", "Wi-Fi")
 
 local dns_items = {}
 
 local function ensure_dns_item(index)
   if dns_items[index] then return dns_items[index] end
-
   local item = sbar.add("item", "widgets.wifi.dns." .. index, {
     position = "popup." .. wifi_bracket.name,
-    icon = {
-      align = "left",
-      string = "DNS" .. index .. ":",
-      width = popup_width / 2,
-    },
-    label = {
-      string = "N/A",
-      width = popup_width / 2,
-      align = "right",
-      max_chars = 64,
-    },
+    icon = { align = "left", string = "DNS" .. index .. ":", width = popup_width / 2 },
+    label = { string = "N/A", width = popup_width / 2, align = "right", max_chars = 64 },
   })
-
   item:subscribe("mouse.clicked", function(env)
-    if copy_label_to_clipboard then
-      copy_label_to_clipboard(env)
-    end
+    if copy_label_to_clipboard then copy_label_to_clipboard(env) end
   end)
-
   dns_items[index] = item
   return item
 end
 
 local function set_dns_servers(servers)
-  local values = servers
-  if #values == 0 then
-    values = { "N/A" }
-  end
-
+  local values = #servers > 0 and servers or { "N/A" }
   for i, value in ipairs(values) do
     local item = ensure_dns_item(i)
-    item:set({
-      drawing = true,
-      icon = { string = "DNS" .. i .. ":" },
-      label = { string = value },
-    })
+    item:set({ drawing = true, icon = { string = "DNS" .. i .. ":" }, label = { string = value } })
   end
-
   for i = #values + 1, #dns_items do
     dns_items[i]:set({ drawing = false })
   end
 end
-
-sbar.add("item", { position = "right", width = settings.group_paddings })
-
-local function normalize_speed_text(value)
-  local speed = trim(value)
-  speed = speed:gsub("%s+", " ")
-  speed = speed:gsub("(%d)%s*(%a+[Pp][Ss])$", "%1 %2")
-  return speed
-end
-
-wifi_up:subscribe("network_update", function(env)
-  local up_value = normalize_speed_text(env.upload)
-  local down_value = normalize_speed_text(env.download)
-
-  local up_compact = up_value:gsub("%s+", "")
-  local down_compact = down_value:gsub("%s+", "")
-  local up_color = (tonumber(up_compact:match("^(%d+)")) == 0) and colors.grey or colors.red
-  local down_color = (tonumber(down_compact:match("^(%d+)")) == 0) and colors.grey or colors.blue
-
-  wifi_up:set({
-    icon = { color = up_color },
-    label = {
-      string = up_value,
-      color = up_color
-    }
-  })
-  wifi_down:set({
-    icon = { color = down_color },
-    label = {
-      string = down_value,
-      color = down_color
-    }
-  })
-end)
-
-local function refresh_network_icon()
-  refresh_active_network(function()
-    sbar.exec("ipconfig getifaddr " .. active_interface .. " 2>/dev/null", function(ip)
-      local connected = trim(ip) ~= ""
-      wifi:set({
-        icon = {
-          string = connected and (active_is_wifi and icons.wifi.connected or icons.wifi.ethernet) or icons.wifi.disconnected,
-          color = connected and colors.white or colors.red,
-        },
-      })
-    end)
-  end)
-end
-
-wifi:subscribe("wifi_change", refresh_network_icon)
-network_watcher:subscribe("system_woke", function()
-  -- Kill with -9 (SIGKILL) so a stuck post-sleep process is force-removed,
-  -- then restart after a short delay to let the network stack stabilise.
-  sbar.exec("killall -9 network_load >/dev/null 2>&1")
-  sbar.delay(3, function()
-    restart_network_provider(active_interface)
-  end)
-end)
-network_watcher:subscribe("routine", refresh_network_icon)
 
 local function hide_details()
   wifi_bracket:set({ popup = { drawing = false } })
@@ -296,92 +182,134 @@ end
 
 local function toggle_details()
   local should_draw = wifi_bracket:query().popup.drawing == "off"
-  if should_draw then
-    wifi_bracket:set({ popup = { drawing = true }})
-    sbar.exec("networksetup -getcomputername", function(result)
-      hostname:set({ label = result })
-    end)
-    refresh_active_network(function()
+  if not should_draw then
+    hide_details()
+    return
+  end
+
+  wifi_bracket:set({ popup = { drawing = true } })
+
+  -- Detect current interface on demand (safe: user-triggered, not wake-triggered).
+  sbar.exec("route -n get default 2>/dev/null | awk '/interface:/{print $2; exit}'", function(out)
+    local detected = trim(out)
+    if detected ~= "" then active_interface = detected end
+
+    -- Detect wifi vs ethernet for the active interface.
+    sbar.exec("networksetup -listallhardwareports 2>/dev/null", function(hw)
+      local cur_port = nil
+      for line in tostring(hw):gmatch("[^\r\n]+") do
+        local port = line:match("^Hardware Port:%s*(.+)$")
+        if port then
+          cur_port = trim(port)
+        else
+          local dev = line:match("^Device:%s*(.+)$")
+          if dev and trim(dev) == active_interface then
+            active_service = cur_port or "Ethernet"
+            local pl = active_service:lower()
+            active_is_wifi = pl:find("wifi", 1, true) ~= nil or pl:find("wi%-fi") ~= nil
+          end
+        end
+      end
+
       iface:set({ label = active_interface })
       service:set({ label = active_service })
 
-      local function set_ssid_row(value, icon)
-        ssid:set({
-          icon = { string = icon },
-          label = { string = value },
-        })
-      end
+      sbar.exec("networksetup -getcomputername 2>/dev/null", function(result)
+        hostname:set({ label = trim(result) })
+      end)
 
       sbar.exec("ipconfig getifaddr " .. active_interface .. " 2>/dev/null", function(result)
-        local value = trim(result)
-        ip:set({ label = value ~= "" and value or "N/A" })
+        local ip_addr = trim(result)
+        ip:set({ label = ip_addr ~= "" and ip_addr or "N/A" })
+        local connected = ip_addr ~= ""
 
-        local connected = value ~= ""
         if active_is_wifi then
           if not connected then
-            set_ssid_row("Not Connected", icons.wifi.disconnected)
-            return
-          end
-
-          sbar.exec("networksetup -listpreferredwirelessnetworks " .. active_interface .. " 2>/dev/null | grep -v '^Preferred networks on' | head -1 | xargs", function(preferred_name)
-            local preferred_ssid = trim(preferred_name)
-            local preferred_lower = preferred_ssid:lower()
-
-            if preferred_ssid ~= "" and preferred_lower:find("<redacted>", 1, true) == nil then
-              set_ssid_row(preferred_ssid, icons.wifi.connected)
-              return
-            end
-
-            sbar.exec("ipconfig getsummary " .. active_interface .. " | awk -F ' SSID : ' '/ SSID : / {print $2}'", function(summary_name)
-              local fallback = trim(summary_name)
-              local fallback_lower = fallback:lower()
-
-              if fallback ~= "" and fallback_lower:find("<redacted>", 1, true) == nil then
-                set_ssid_row(fallback, icons.wifi.connected)
+            ssid:set({ icon = { string = icons.wifi.disconnected }, label = { string = "Not Connected" } })
+          else
+            sbar.exec("networksetup -listpreferredwirelessnetworks " .. active_interface
+              .. " 2>/dev/null | grep -v '^Preferred networks on' | head -1 | xargs", function(preferred)
+              local name = trim(preferred)
+              if name ~= "" and not name:lower():find("<redacted>", 1, true) then
+                ssid:set({ icon = { string = icons.wifi.connected }, label = { string = name } })
               else
-                set_ssid_row("Wi-Fi", icons.wifi.connected)
+                sbar.exec("ipconfig getsummary " .. active_interface
+                  .. " | awk -F ' SSID : ' '/ SSID : / {print $2}'", function(s)
+                  local n = trim(s)
+                  ssid:set({
+                    icon = { string = icons.wifi.connected },
+                    label = { string = (n ~= "" and not n:lower():find("<redacted>", 1, true)) and n or "Wi-Fi" },
+                  })
+                end)
               end
             end)
-          end)
+          end
         else
-          set_ssid_row("Ethernet", connected and icons.wifi.ethernet or icons.wifi.disconnected)
+          ssid:set({
+            icon = { string = connected and icons.wifi.ethernet or icons.wifi.disconnected },
+            label = { string = "Ethernet" },
+          })
         end
       end)
 
       sbar.exec("ipconfig getoption " .. active_interface .. " subnet_mask 2>/dev/null", function(result)
-        local value = trim(result)
-        mask:set({ label = value ~= "" and value or "N/A" })
+        mask:set({ label = trim(result) ~= "" and trim(result) or "N/A" })
       end)
 
       sbar.exec("ipconfig getoption " .. active_interface .. " router 2>/dev/null", function(result)
-        local value = trim(result)
-        router:set({ label = value ~= "" and value or "N/A" })
+        router:set({ label = trim(result) ~= "" and trim(result) or "N/A" })
       end)
 
       sbar.exec("scutil --dns | sed -nE 's/.*nameserver\\[[0-9]+\\][[:space:]]*:[[:space:]]*(.*)$/\\1/p' | awk '!seen[$0]++'", function(result)
         local servers = parse_lines(result)
-
         if #servers == 0 then
           sbar.exec("networksetup -getdnsservers " .. shell_quote(active_service) .. " 2>/dev/null", function(fallback)
-            local fallback_servers = {}
+            local list = {}
             for _, line in ipairs(parse_lines(fallback)) do
               if not line:match("[Tt]here aren't any DNS Servers") then
-                table.insert(fallback_servers, line)
+                table.insert(list, line)
               end
             end
-
-            set_dns_servers(fallback_servers)
+            set_dns_servers(list)
           end)
           return
         end
-
         set_dns_servers(servers)
       end)
     end)
-  else
-    hide_details()
-  end
+  end)
 end
+
+wifi_up:subscribe("network_update", function(env)
+  local up = normalize_speed(env.upload)
+  local down = normalize_speed(env.download)
+  local up_num = tonumber((up:gsub("%s+", "")):match("^(%d+)")) or 0
+  local dn_num = tonumber((down:gsub("%s+", "")):match("^(%d+)")) or 0
+  wifi_up:set({
+    icon = { color = up_num == 0 and colors.grey or colors.red },
+    label = { string = up, color = up_num == 0 and colors.grey or colors.red },
+  })
+  wifi_down:set({
+    icon = { color = dn_num == 0 and colors.grey or colors.blue },
+    label = { string = down, color = dn_num == 0 and colors.grey or colors.blue },
+  })
+end)
+
+wifi:subscribe("wifi_change", refresh_icon)
+network_watcher:subscribe("routine", refresh_icon)
+
+network_watcher:subscribe("system_woke", function()
+  -- Guard: system_woke fires multiple times on wake; without this each firing
+  -- queues a delayed restart and you end up with N network_load processes.
+  if waking then return end
+  waking = true
+  sbar.exec("killall -9 network_load >/dev/null 2>&1")
+  sbar.delay(15, function()
+    waking = false
+    restart_network_provider(active_interface)
+    refresh_icon()
+  end)
+end)
 
 wifi_up:subscribe("mouse.clicked", toggle_details)
 wifi_down:subscribe("mouse.clicked", toggle_details)
@@ -391,7 +319,7 @@ wifi:subscribe("mouse.exited.global", hide_details)
 copy_label_to_clipboard = function(env)
   local label = sbar.query(env.NAME).label.value
   sbar.exec("printf '%s' " .. shell_quote(label) .. " | pbcopy")
-  sbar.set(env.NAME, { label = { string = icons.clipboard, align="center" } })
+  sbar.set(env.NAME, { label = { string = icons.clipboard, align = "center" } })
   sbar.delay(1, function()
     sbar.set(env.NAME, { label = { string = label, align = "right" } })
   end)
@@ -405,4 +333,5 @@ router:subscribe("mouse.clicked", copy_label_to_clipboard)
 iface:subscribe("mouse.clicked", copy_label_to_clipboard)
 service:subscribe("mouse.clicked", copy_label_to_clipboard)
 
-refresh_network_icon()
+restart_network_provider(active_interface)
+refresh_icon()

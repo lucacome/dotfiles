@@ -78,13 +78,20 @@ local ram_observer = sbar.add("item", {
   update_freq = 2,
 })
 
+local cpu_restarting = false
+
 ram_observer:subscribe("routine", update_ram)
 ram_observer:subscribe("system_woke", function()
-  -- Use SIGKILL (-9) so a post-sleep stuck process is force-removed,
-  -- then restart after a short delay.
+  -- Guard: system_woke fires multiple times on wake. Without this, each
+  -- firing queues a delayed spawn and you end up with N cpu_load processes.
+  if cpu_restarting then return end
+  cpu_restarting = true
   sbar.exec("killall -9 cpu_load >/dev/null 2>&1")
-  sbar.delay(3, function()
-    sbar.exec("$CONFIG_DIR/helpers/event_providers/cpu_load/bin/cpu_load cpu_update 2.0")
+  sbar.delay(5, function()
+    cpu_restarting = false
+    -- Kill+spawn is one atomic shell command so a second stale callback
+    -- from a prior wake cannot leave two processes running simultaneously.
+    sbar.exec("killall -9 cpu_load >/dev/null 2>&1; $CONFIG_DIR/helpers/event_providers/cpu_load/bin/cpu_load cpu_update 2.0")
   end)
 end)
 
