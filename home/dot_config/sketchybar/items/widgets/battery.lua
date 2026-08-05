@@ -1,6 +1,7 @@
 local icons = require("icons")
 local colors = require("colors")
 local settings = require("settings")
+local popups = require("helpers.popups")
 
 local battery = sbar.add("item", "widgets.battery", {
   position = "right",
@@ -105,15 +106,25 @@ end)
 
 battery:subscribe("mouse.clicked", function(env)
   local drawing = battery:query().popup.drawing
+  if drawing == "off" then
+    popups.close_others("battery")
+  end
   battery:set( { popup = { drawing = "toggle" } })
 
   if drawing == "off" then
     sbar.exec("pmset -g batt", function(batt_info)
-      local found, _, remaining = batt_info:find(" (%d+:%d+) remaining")
-      local label = found and remaining .. "h" or "No estimate"
+      local label = "No estimate"
+      local hours, minutes = batt_info:match("(%d+):(%d+):%d+ remaining")
+      if hours and minutes then
+        label = hours .. "h " .. minutes .. "m"
+      end
       remaining_time:set( { label = label })
     end)
   end
+end)
+
+popups.track("battery", battery, function()
+  battery:set({ popup = { drawing = false } })
 end)
 
 update_battery_widget()

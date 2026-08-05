@@ -29,30 +29,43 @@ local function icon_line(apps)
   return s ~= "" and s or " —"
 end
 
-local function set_selected(focused)
+local function set_selected(focused, visible_set)
+  visible_set = visible_set or {}
   for _, ws in ipairs(workspace_order) do
-    local sel = (ws == focused)
     if spaces[ws] then
+      local is_focused = (ws == focused)
+      local is_visible = visible_set[ws]
       spaces[ws]:set({
-        icon = { color = sel and colors.green or colors.white },
-        label = { highlight = sel },
-        background = { border_color = sel and colors.black or colors.bg2 },
-      })
-    end
-    if space_brackets[ws] then
-      space_brackets[ws]:set({
-        background = { border_color = sel and colors.green or colors.bg2 },
+        icon = { color = is_focused and colors.green or (is_visible and colors.blue or colors.white) },
+        label = { highlight = is_focused },
+        background = { border_color = is_focused and colors.black or colors.bg2 },
       })
     end
   end
+  -- Bracket sets in a separate callback to avoid SbarLua batching them with the item sets above
+  sbar.delay(0, function()
+    for _, ws in ipairs(workspace_order) do
+      if space_brackets[ws] then
+        local is_focused = (ws == focused)
+        local is_visible = visible_set[ws]
+        space_brackets[ws]:set({
+          background = { border_color = is_focused and colors.green or (is_visible and colors.blue or colors.bg2) },
+        })
+      end
+    end
+  end)
 end
 
 local function set_visible(ws, visible)
-  if spaces[ws] then spaces[ws]:set({ drawing = visible }) end
-  if space_brackets[ws] then space_brackets[ws]:set({ drawing = visible }) end
-  if space_paddings[ws] then
-    space_paddings[ws]:set({ width = visible and settings.group_paddings or 0 })
-  end
+  -- Each in its own callback so SbarLua doesn't batch them into one mach message
+  sbar.delay(0, function()
+    if space_paddings[ws] then
+      space_paddings[ws]:set({ width = visible and settings.group_paddings or 0 })
+    end
+  end)
+  sbar.delay(0, function()
+    if space_brackets[ws] then space_brackets[ws]:set({ drawing = visible }) end
+  end)
 end
 
 local refresh_workspaces
@@ -126,30 +139,41 @@ refresh_workspaces = function()
     local focused = trim((parse_lines(focused_out))[1] or "")
     if focused == "" then focused = nil end
 
-    sbar.exec("aerospace list-windows --all --format '%{workspace}\\t%{app-name}'", function(wins_out)
-      local apps_by_ws = {}
-      for _, ws in ipairs(workspace_order) do apps_by_ws[ws] = {} end
+    -- Skip if aerospace isn't responding (prevents flooding during wake or restart)
+    if not focused and #parse_lines(focused_out) == 0 then return end
 
-      for _, line in ipairs(parse_lines(wins_out)) do
-        local ws, app = line:match("^(.-)\\t(.*)$")
-        if ws then
-          ws = trim(ws)
-          app = trim(app or "")
-          if apps_by_ws[ws] and app ~= "" and not ignored_apps[app] then
-            table.insert(apps_by_ws[ws], app)
+    sbar.exec("aerospace list-workspaces --visible --monitor all --format '%{workspace}'", function(visible_out)
+      local visible_set = {}
+      for _, ws in ipairs(parse_lines(visible_out)) do
+        visible_set[trim(ws)] = true
+      end
+
+      sbar.exec("aerospace list-windows --all --format '%{workspace}\\t%{app-name}'", function(wins_out)
+        local apps_by_ws = {}
+        for _, ws in ipairs(workspace_order) do apps_by_ws[ws] = {} end
+
+        for _, line in ipairs(parse_lines(wins_out)) do
+          local ws, app = line:match("^(.-)\\t(.*)$")
+          if ws then
+            ws = trim(ws)
+            app = trim(app or "")
+            if apps_by_ws[ws] and app ~= "" and not ignored_apps[app] then
+              table.insert(apps_by_ws[ws], app)
+            end
           end
         end
-      end
 
-      for _, ws in ipairs(workspace_order) do
-        local apps = apps_by_ws[ws] or {}
-        set_visible(ws, #apps > 0 or ws == focused)
-        if spaces[ws] then
-          spaces[ws]:set({ label = icon_line(apps) })
+        for _, ws in ipairs(workspace_order) do
+          local apps = apps_by_ws[ws] or {}
+          local visible = #apps > 0 or ws == focused or visible_set[ws]
+          if spaces[ws] then
+            spaces[ws]:set({ drawing = visible, label = icon_line(apps) })
+          end
+          set_visible(ws, visible)
         end
-      end
 
-      if focused then set_selected(focused) end
+        set_selected(focused, visible_set)
+      end)
     end)
   end)
 end

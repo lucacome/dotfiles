@@ -1,5 +1,6 @@
 local icons = require("icons")
 local colors = require("colors")
+local popups = require("helpers.popups")
 
 local whitelist = { ["Spotify"] = true, ["Music"] = true }
 
@@ -109,9 +110,16 @@ media_cover:subscribe("mouse.exited", function(env)
 end)
 
 media_cover:subscribe("mouse.clicked", function(env)
+  if media_cover:query().popup.drawing == "off" then
+    popups.close_others("media")
+  end
   media_cover:set({ popup = { drawing = "toggle" }})
 end)
 
 media_title:subscribe("mouse.exited.global", function(env)
   media_cover:set({ popup = { drawing = false }})
+end)
+
+popups.track("media", media_cover, function()
+  media_cover:set({ popup = { drawing = false } })
 end)

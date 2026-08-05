@@ -14,7 +14,10 @@ local waking = false
 local copy_label_to_clipboard
 local wifi  -- forward declaration so refresh_icon (defined below) can close over it
 
+local provider_interface = nil
+
 local function restart_network_provider(iface)
+  provider_interface = iface
   sbar.exec("killall network_load >/dev/null 2>&1; $CONFIG_DIR/helpers/event_providers/network_load/bin/network_load "
     .. shell_quote(iface) .. " network_update 2.0")
 end
@@ -28,7 +31,14 @@ local function refresh_icon()
   if waking then return end
   sbar.exec("route -n get default 2>/dev/null | awk '/interface:/{print $2; exit}'", function(out)
     local iface = trim(out)
-    if iface ~= "" then active_interface = iface end
+    if iface ~= "" then
+      if iface ~= active_interface then
+        active_interface = iface
+      end
+      if iface ~= provider_interface then
+        restart_network_provider(iface)
+      end
+    end
     sbar.exec("ipconfig getifaddr " .. active_interface .. " 2>/dev/null", function(addr)
       local connected = trim(addr) ~= ""
       wifi:set({
@@ -180,6 +190,9 @@ local function hide_details()
   wifi_bracket:set({ popup = { drawing = false } })
 end
 
+local popups = require("helpers.popups")
+popups.track("wifi", wifi_bracket, hide_details)
+
 local function toggle_details()
   local should_draw = wifi_bracket:query().popup.drawing == "off"
   if not should_draw then
@@ -187,6 +200,7 @@ local function toggle_details()
     return
   end
 
+  popups.close_others("wifi")
   wifi_bracket:set({ popup = { drawing = true } })
 
   -- Detect current interface on demand (safe: user-triggered, not wake-triggered).
@@ -261,20 +275,38 @@ local function toggle_details()
       end)
 
       sbar.exec("scutil --dns | sed -nE 's/.*nameserver\\[[0-9]+\\][[:space:]]*:[[:space:]]*(.*)$/\\1/p' | awk '!seen[$0]++'", function(result)
-        local servers = parse_lines(result)
-        if #servers == 0 then
-          sbar.exec("networksetup -getdnsservers " .. shell_quote(active_service) .. " 2>/dev/null", function(fallback)
-            local list = {}
-            for _, line in ipairs(parse_lines(fallback)) do
-              if not line:match("[Tt]here aren't any DNS Servers") then
-                table.insert(list, line)
+        local servers = {}
+        for _, line in ipairs(parse_lines(result)) do
+          if not line:match(":") then
+            table.insert(servers, line)
+          end
+        end
+
+        -- Tailscale MagicDNS (100.100.100.100) only shows while tailscaled is running
+        sbar.exec("pgrep -x tailscaled || true", function(ts_out)
+          if trim(ts_out) == "" then
+            local filtered = {}
+            for _, srv in ipairs(servers) do
+              if srv ~= "100.100.100.100" then
+                table.insert(filtered, srv)
               end
             end
-            set_dns_servers(list)
-          end)
-          return
-        end
-        set_dns_servers(servers)
+            servers = filtered
+          end
+          if #servers == 0 then
+            sbar.exec("networksetup -getdnsservers " .. shell_quote(active_service) .. " 2>/dev/null", function(fallback)
+              local list = {}
+              for _, line in ipairs(parse_lines(fallback)) do
+                if not line:match("[Tt]here aren't any DNS Servers") then
+                  table.insert(list, line)
+                end
+              end
+              set_dns_servers(list)
+            end)
+            return
+          end
+          set_dns_servers(servers)
+        end)
       end)
     end)
   end)

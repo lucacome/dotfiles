@@ -1,6 +1,7 @@
 local colors = require("colors")
 local icons = require("icons")
 local settings = require("settings")
+local popups = require("helpers.popups")
 
 local popup_width = 250
 
@@ -107,6 +108,7 @@ local function volume_toggle_details(env)
 
   local should_draw = volume_bracket:query().popup.drawing == "off"
   if should_draw then
+    popups.close_others("volume")
     volume_bracket:set({ popup = { drawing = true } })
     sbar.exec("SwitchAudioSource -t output -c", function(result)
       current_audio_device = result:sub(1, -2)
@@ -148,4 +150,6 @@ volume_icon:subscribe("mouse.scrolled", volume_scroll)
 volume_percent:subscribe("mouse.clicked", volume_toggle_details)
 volume_percent:subscribe("mouse.exited.global", volume_collapse_details)
 volume_percent:subscribe("mouse.scrolled", volume_scroll)
+
+popups.track("volume", volume_bracket, volume_collapse_details)
 

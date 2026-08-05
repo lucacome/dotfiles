@@ -80,11 +80,11 @@ static inline bool mach_send_message(mach_port_t port, char *message, uint32_t l
     msg.descriptor.type = MACH_MSG_OOL_DESCRIPTOR;
 
     kern_return_t err = mach_msg(&msg.header,
-                                 MACH_SEND_MSG,
+                                 MACH_SEND_MSG | MACH_SEND_TIMEOUT,
                                  sizeof(struct mach_message),
                                  0,
                                  MACH_PORT_NULL,
-                                 MACH_MSG_TIMEOUT_NONE,
+                                 2000,
                                  MACH_PORT_NULL);
 
     return err == KERN_SUCCESS;
