@@ -1,0 +1,6 @@
+[2026-08-06 15:21:06] wake_watch started pid=23413
+[2026-08-06 15:24:21] wake_watch started pid=24302
+[2026-08-06 15:24:34] periodic probe: bar unresponsive
+[2026-08-06 15:24:39] kill -9 due to: sustained unresponsiveness (periodic)
+[2026-08-06 15:30:34] periodic probe: bar unresponsive
+[2026-08-06 15:30:39] kill -9 due to: sustained unresponsiveness (periodic)
