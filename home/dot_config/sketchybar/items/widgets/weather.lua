@@ -1,6 +1,7 @@
 local colors = require("colors")
 local settings = require("settings")
 local popups = require("helpers.popups")
+local wake = require("helpers.wake")
 
 -- SF Symbols glyphs (U+100000 supplementary plane, rendered by SF Pro / sf-symbols font)
 local sf_icons = {
@@ -264,9 +265,6 @@ local function update_weather()
 end
 
 weather:subscribe({ "routine", "forced" }, update_weather)
-weather:subscribe("system_woke", function()
-  sbar.delay(5, update_weather)
-end)
 
 weather:subscribe("mouse.clicked", function()
   local should_draw = weather_bracket:query().popup.drawing == "off"
@@ -276,7 +274,13 @@ weather:subscribe("mouse.clicked", function()
   end
   popups.close_others("weather")
   weather_bracket:set({ popup = { drawing = true } })
-  update_weather()
+update_weather()
+
+-- The watchdog reloads the bar shortly after a wake; the network may not be
+-- back yet when this module first runs, so retry once the system has settled.
+if wake.recent_woke(20) then
+  sbar.delay(8, update_weather)
+end
 end)
 
 weather:subscribe("mouse.exited.global", function()

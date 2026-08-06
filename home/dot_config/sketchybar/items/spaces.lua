@@ -3,6 +3,7 @@ local icons = require("icons")
 local settings = require("settings")
 local app_icons = require("helpers.app_icons")
 local utils = require("helpers.utils")
+local wake = require("helpers.wake")
 
 local trim = utils.trim
 local parse_lines = utils.parse_lines
@@ -195,13 +196,16 @@ observer:subscribe("aerospace_workspace_change", function()
   if not aerospace_waking then refresh_workspaces() end
 end)
 
-observer:subscribe("system_woke", function()
+-- The watchdog reloads the bar shortly after a wake. During that reload the
+-- window server is still churning out space_windows_change events, so keep
+-- the refresh storm under control and re-poll once aerospace has caught up.
+if wake.recent_woke(60) then
   aerospace_waking = true
   sbar.delay(15, function()
     aerospace_waking = false
     refresh_workspaces()
   end)
-end)
+end
 
 initialize()
 

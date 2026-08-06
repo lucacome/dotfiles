@@ -3,3 +3,4 @@ all:
 	(cd menus && $(MAKE)) >/dev/null
 	(cd frontmost_watch && $(MAKE)) >/dev/null
 	(cd other_window_watch && $(MAKE)) >/dev/null
+	(cd wake_watch && $(MAKE)) >/dev/null

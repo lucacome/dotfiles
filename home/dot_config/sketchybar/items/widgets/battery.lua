@@ -100,9 +100,6 @@ local function update_battery_widget()
 end
 
 battery:subscribe({"routine", "power_source_change"}, update_battery_widget)
-battery:subscribe("system_woke", function()
-  sbar.delay(5, update_battery_widget)
-end)
 
 battery:subscribe("mouse.clicked", function(env)
   local drawing = battery:query().popup.drawing

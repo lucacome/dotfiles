@@ -38,7 +38,13 @@ local function any_open()
 end
 
 local function check_frontmost()
+  -- Only spawn the (expensive, window-enumerating) helper while a popup is
+  -- actually open; at idle this is 2 subprocesses per second saved.
   if checking_front then return end
+  if not any_open() then
+    front_snapshot = nil
+    return
+  end
   checking_front = true
   sbar.exec("$CONFIG_DIR/helpers/frontmost_watch/bin/frontmost_watch", function(out)
     checking_front = false
@@ -62,6 +68,7 @@ end
 
 local function check_cursor()
   if checking_cursor then return end
+  if not any_open() then return end
   checking_cursor = true
   sbar.exec("$CONFIG_DIR/helpers/other_window_watch/bin/other_window_watch", function(out)
     checking_cursor = false

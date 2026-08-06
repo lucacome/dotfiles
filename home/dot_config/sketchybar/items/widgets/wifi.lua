@@ -10,7 +10,6 @@ local shell_quote = utils.shell_quote
 local active_interface = "en0"
 local active_service = "Wi-Fi"
 local active_is_wifi = true
-local waking = false
 local copy_label_to_clipboard
 local wifi  -- forward declaration so refresh_icon (defined below) can close over it
 
@@ -28,7 +27,6 @@ local function normalize_speed(value)
 end
 
 local function refresh_icon()
-  if waking then return end
   sbar.exec("route -n get default 2>/dev/null | awk '/interface:/{print $2; exit}'", function(out)
     local iface = trim(out)
     if iface ~= "" then
@@ -329,19 +327,6 @@ end)
 
 wifi:subscribe("wifi_change", refresh_icon)
 network_watcher:subscribe("routine", refresh_icon)
-
-network_watcher:subscribe("system_woke", function()
-  -- Guard: system_woke fires multiple times on wake; without this each firing
-  -- queues a delayed restart and you end up with N network_load processes.
-  if waking then return end
-  waking = true
-  sbar.exec("killall -9 network_load >/dev/null 2>&1")
-  sbar.delay(15, function()
-    waking = false
-    restart_network_provider(active_interface)
-    refresh_icon()
-  end)
-end)
 
 wifi_up:subscribe("mouse.clicked", toggle_details)
 wifi_down:subscribe("mouse.clicked", toggle_details)

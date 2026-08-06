@@ -93,8 +93,10 @@ volume_percent:subscribe("volume_change", function(env)
 end)
 
 local function volume_collapse_details()
-  local drawing = volume_bracket:query().popup.drawing == "on"
-  if not drawing then return end
+  -- query() can return nil when the bar is rebuilding; guard instead of
+  -- erroring on every app switch.
+  local q = volume_bracket:query()
+  if not (q and q.popup and q.popup.drawing == "on") then return end
   volume_bracket:set({ popup = { drawing = false } })
   sbar.remove('/volume.device\\.*/')
 end
