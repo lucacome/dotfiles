@@ -11,7 +11,6 @@ local M = {}
 local registry = {}
 local front_snapshot = nil
 local checking_front = false
-local checking_cursor = false
 
 local function trim(value)
   return tostring(value or ""):gsub("^%s+", ""):gsub("%s+$", "")
@@ -66,21 +65,6 @@ local function check_frontmost()
   end)
 end
 
-local function check_cursor()
-  if checking_cursor then return end
-  if not any_open() then return end
-  checking_cursor = true
-  sbar.exec("$CONFIG_DIR/helpers/other_window_watch/bin/other_window_watch", function(out)
-    checking_cursor = false
-    if not any_open() then
-      return
-    end
-    if trim(out) == "1" then
-      collapse_all()
-    end
-  end)
-end
-
 -- App/space-level events: closes popups on app switch or window create/destroy.
 sbar.add("item", {
   drawing = false,
@@ -94,7 +78,6 @@ local observer = sbar.add("item", {
 })
 observer:subscribe("routine", function()
   check_frontmost()
-  check_cursor()
 end)
 
 function M.track(name, target, close)

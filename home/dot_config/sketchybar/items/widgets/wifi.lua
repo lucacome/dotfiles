@@ -10,6 +10,7 @@ local shell_quote = utils.shell_quote
 local active_interface = "en0"
 local active_service = "Wi-Fi"
 local active_is_wifi = true
+local service_iface = nil
 local copy_label_to_clipboard
 local wifi  -- forward declaration so refresh_icon (defined below) can close over it
 
@@ -26,6 +27,40 @@ local function normalize_speed(value)
   return s
 end
 
+local function detect_service(iface, callback)
+  sbar.exec("networksetup -listallhardwareports 2>/dev/null", function(hw)
+    local cur_port = nil
+    for line in tostring(hw):gmatch("[^\r\n]+") do
+      local port = line:match("^Hardware Port:%s*(.+)$")
+      if port then
+        cur_port = trim(port)
+      else
+        local dev = line:match("^Device:%s*(.+)$")
+        if dev and trim(dev) == iface then
+          local service_name = cur_port or "Ethernet"
+          local pl = service_name:lower()
+          callback(service_name, pl:find("wifi", 1, true) ~= nil or pl:find("wi%-fi") ~= nil)
+          return
+        end
+      end
+    end
+    callback("Ethernet", false)
+  end)
+end
+
+local function apply_network_icon()
+  sbar.exec("ipconfig getifaddr " .. active_interface .. " 2>/dev/null", function(addr)
+    local connected = trim(addr) ~= ""
+    wifi:set({
+      icon = {
+        string = connected and (active_is_wifi and icons.wifi.connected or icons.wifi.ethernet)
+                           or icons.wifi.disconnected,
+        color = connected and colors.white or colors.red,
+      },
+    })
+  end)
+end
+
 local function refresh_icon()
   sbar.exec("route -n get default 2>/dev/null | awk '/interface:/{print $2; exit}'", function(out)
     local iface = trim(out)
@@ -36,17 +71,17 @@ local function refresh_icon()
       if iface ~= provider_interface then
         restart_network_provider(iface)
       end
+      if iface ~= service_iface then
+        service_iface = iface
+        detect_service(iface, function(service_name, is_wifi)
+          active_service = service_name
+          active_is_wifi = is_wifi
+          apply_network_icon()
+        end)
+        return
+      end
     end
-    sbar.exec("ipconfig getifaddr " .. active_interface .. " 2>/dev/null", function(addr)
-      local connected = trim(addr) ~= ""
-      wifi:set({
-        icon = {
-          string = connected and (active_is_wifi and icons.wifi.connected or icons.wifi.ethernet)
-                             or icons.wifi.disconnected,
-          color = connected and colors.white or colors.red,
-        },
-      })
-    end)
+    apply_network_icon()
   end)
 end
 
@@ -207,21 +242,10 @@ local function toggle_details()
     if detected ~= "" then active_interface = detected end
 
     -- Detect wifi vs ethernet for the active interface.
-    sbar.exec("networksetup -listallhardwareports 2>/dev/null", function(hw)
-      local cur_port = nil
-      for line in tostring(hw):gmatch("[^\r\n]+") do
-        local port = line:match("^Hardware Port:%s*(.+)$")
-        if port then
-          cur_port = trim(port)
-        else
-          local dev = line:match("^Device:%s*(.+)$")
-          if dev and trim(dev) == active_interface then
-            active_service = cur_port or "Ethernet"
-            local pl = active_service:lower()
-            active_is_wifi = pl:find("wifi", 1, true) ~= nil or pl:find("wi%-fi") ~= nil
-          end
-        end
-      end
+    detect_service(active_interface, function(service_name, is_wifi)
+      active_service = service_name
+      active_is_wifi = is_wifi
+      service_iface = active_interface
 
       iface:set({ label = active_interface })
       service:set({ label = active_service })

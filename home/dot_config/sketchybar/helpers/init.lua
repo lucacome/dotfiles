@@ -18,7 +18,6 @@ for _, rel in ipairs({
   "event_providers/cpu_load/bin/cpu_load",
   "event_providers/network_load/bin/network_load",
   "frontmost_watch/bin/frontmost_watch",
-  "other_window_watch/bin/other_window_watch",
   "menus/bin/menus",
   "wake_watch/bin/wake_watch",
 }) do

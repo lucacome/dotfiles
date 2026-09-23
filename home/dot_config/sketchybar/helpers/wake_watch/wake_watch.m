@@ -130,11 +130,71 @@ static bool bar_responsive(int probe_timeout)
     return false;
 }
 
+// True if a sketchybar process exists right now.
+static bool bar_alive(void)
+{
+    pid_t pid = fork();
+    if (pid == 0)
+    {
+        execl("/usr/bin/pgrep", "pgrep", "-x", "sketchybar", (char *)NULL);
+        _exit(127);
+    }
+    int status;
+    for (int i = 0; i < 3; i++)
+    {
+        pid_t r = waitpid(pid, &status, WNOHANG);
+        if (r == pid)
+            return WIFEXITED(status) && WEXITSTATUS(status) == 0;
+        if (r == -1)
+            return false;
+        sleep(1);
+    }
+    kill(pid, SIGKILL);
+    waitpid(pid, NULL, 0);
+    return false;
+}
+
 static void kill_bar(const char *why)
 {
     g_last_action = time(NULL);
     log_msg("kill -9 due to: %s", why);
     system("/usr/bin/killall -9 sketchybar 2>/dev/null");
+
+    // launchd (KeepAlive) usually revives it within a second or two. Wait a
+    // bounded time for that; if nothing comes back, kick the launchd job and
+    // as a last resort launch the bar ourselves. This keeps recovery working
+    // even on machines where the brew plist was never bootstrapped.
+    for (int i = 0; i < 6 && !bar_alive(); i++)
+        sleep(1);
+    if (bar_alive())
+    {
+        log_msg("bar relaunched (launchd)");
+        return;
+    }
+
+    char cmd[2048];
+    snprintf(cmd, sizeof(cmd),
+             "/bin/launchctl kickstart gui/%u/homebrew.mxcl.sketchybar 2>/dev/null",
+             (unsigned)getuid());
+    if (system(cmd) == 0)
+    {
+        for (int i = 0; i < 6 && !bar_alive(); i++)
+            sleep(1);
+        if (bar_alive())
+        {
+            log_msg("bar relaunched via launchctl kickstart");
+            return;
+        }
+    }
+
+    log_msg("no launchd job; spawning sketchybar directly");
+    pid_t pid = fork();
+    if (pid == 0)
+    {
+        setsid();
+        execv(bar_bin, (char *[]){(char *)bar_bin, (char *)NULL});
+        _exit(127);
+    }
 }
 
 static void reload_bar(const char *why)
