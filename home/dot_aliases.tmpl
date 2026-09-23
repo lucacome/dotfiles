@@ -13,6 +13,9 @@
 {{- if lookPath "gh" -}}
 {{- $update = printf "%s && gh extension upgrade --all" $update -}}
 {{- end -}}
+{{- if lookPath "chezmoi" -}}
+{{- $update = printf "%s && chezmoi update" $update -}}
+{{- end -}}
 alias update='{{ $update }}'
 
 {{- if lookPath "bat" }}
