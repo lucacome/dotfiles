@@ -1,5 +1,5 @@
 [tools]
-# bitwarden = "latest" no arm64 release
+bitwarden = "latest"
 bitwarden-secrets-manager = { version = "latest", version_prefix = "bws-v" }
 {{- if eq .chezmoi.os "linux" }}
 age = "latest"
@@ -12,3 +12,4 @@ zoxide = "latest"
 
 [settings]
 experimental = true
+minimum_release_age = "3h"
