@@ -102,16 +102,16 @@ end
 battery:subscribe({"routine", "power_source_change"}, update_battery_widget)
 
 battery:subscribe("mouse.clicked", function(env)
-  local drawing = battery:query().popup.drawing
-  if drawing == "off" then
+  local drawing = popups.is_open("battery")
+  if not drawing then
     popups.close_others("battery")
   end
-  battery:set( { popup = { drawing = "toggle" } })
+  popups.draw("battery", "toggle")
 
-  if drawing == "off" then
+  if not drawing then
     sbar.exec("pmset -g batt", function(batt_info)
       local label = "No estimate"
-      local hours, minutes = batt_info:match("(%d+):(%d+):%d+ remaining")
+      local hours, minutes = batt_info:match("(%d+):(%d+) remaining")
       if hours and minutes then
         label = hours .. "h " .. minutes .. "m"
       end

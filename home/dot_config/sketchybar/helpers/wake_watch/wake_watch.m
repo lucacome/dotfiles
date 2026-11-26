@@ -7,6 +7,7 @@
 #include <time.h>
 #include <stdarg.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
 #include <stdbool.h>
 #include <fcntl.h>
 
@@ -20,26 +21,91 @@
 //     (launchd KeepAlive restarts it),
 //   - runs its own periodic liveness check so any wedge gets reaped even if
 //     no wake notification ever arrives.
-// All actions are logged to <config_dir>/wake_watch.log.
+// All actions are logged to <state_dir>/wake_watch.log.
 
-static const char *bar_bin = "/opt/homebrew/opt/sketchybar/bin/sketchybar";
+static char g_bar_bin[1024];
+static dispatch_queue_t g_queue;
 
-static const char *config_dir(void)
+static const char *home_dir(void)
 {
     static char buf[1024];
-    const char *cfg = getenv("CONFIG_DIR");
-    if (cfg && *cfg)
+    const char *home = getenv("HOME");
+    if (home && *home)
     {
-        return cfg;
+        return home;
     }
-    snprintf(buf, sizeof(buf), "%s/.config/sketchybar", getenv("HOME") ?: "");
+    snprintf(buf, sizeof(buf), "/Users/%s", getenv("USER") ?: "");
     return buf;
+}
+
+// State and log live outside the config dir so a copied config cannot carry a
+// stale wake timestamp. Created once at startup.
+static const char *state_dir(void)
+{
+    static char buf[1024];
+    snprintf(buf, sizeof(buf), "%s/.local/state/sketchybar", home_dir());
+    return buf;
+}
+
+// Prefer an explicit override, then PATH, then the two brew layouts. launchd
+// starts us with a minimal PATH, so PATH alone is not enough.
+static void resolve_bar_bin(void)
+{
+    const char *env = getenv("SKETCHYBAR_BIN");
+    if (env && *env && access(env, X_OK) == 0)
+    {
+        snprintf(g_bar_bin, sizeof(g_bar_bin), "%s", env);
+        return;
+    }
+
+    FILE *p = popen("/usr/bin/which sketchybar 2>/dev/null", "r");
+    if (p)
+    {
+        if (fgets(g_bar_bin, sizeof(g_bar_bin), p))
+        {
+            char *nl = strchr(g_bar_bin, '\n');
+            if (nl)
+            {
+                *nl = '\0';
+            }
+        }
+        pclose(p);
+    }
+    if (g_bar_bin[0] && access(g_bar_bin, X_OK) == 0)
+    {
+        return;
+    }
+
+    const char *candidates[] = {
+        "/opt/homebrew/bin/sketchybar",
+        "/usr/local/bin/sketchybar",
+        "/opt/homebrew/opt/sketchybar/bin/sketchybar",
+        "/usr/local/opt/sketchybar/bin/sketchybar",
+    };
+    for (size_t i = 0; i < sizeof(candidates) / sizeof(candidates[0]); i++)
+    {
+        if (access(candidates[i], X_OK) == 0)
+        {
+            snprintf(g_bar_bin, sizeof(g_bar_bin), "%s", candidates[i]);
+            return;
+        }
+    }
+    snprintf(g_bar_bin, sizeof(g_bar_bin), "/opt/homebrew/opt/sketchybar/bin/sketchybar");
 }
 
 static void log_msg(const char *fmt, ...)
 {
     char path[2048];
-    snprintf(path, sizeof(path), "%s/wake_watch.log", config_dir());
+    snprintf(path, sizeof(path), "%s/wake_watch.log", state_dir());
+
+    struct stat st;
+    if (stat(path, &st) == 0 && st.st_size > 1024 * 1024)
+    {
+        char old[2048];
+        snprintf(old, sizeof(old), "%s.1", path);
+        rename(path, old);
+    }
+
     FILE *f = fopen(path, "a");
     if (!f)
         return;
@@ -61,18 +127,9 @@ static void log_msg(const char *fmt, ...)
 // the wake path and the periodic path do not fight each other or a legit
 // bar restart. If -1, "just started" (no cooldown yet).
 static time_t g_last_action = 0;
-
-static void write_stamp(void)
-{
-    char path[1024];
-    snprintf(path, sizeof(path), "%s/.wake-state", config_dir());
-    FILE *f = fopen(path, "w");
-    if (f)
-    {
-        fprintf(f, "%ld", (long)time(NULL));
-        fclose(f);
-    }
-}
+// Bar start grace: the first periodic probe must not catch a freshly started
+// bar while it is still loading its config.
+static time_t g_started_at = 0;
 
 // Returns true if the bar answers "sketchybar --query front_app" with real
 // JSON within probe_timeout seconds. Exit status alone is not enough: a wedged
@@ -90,7 +147,7 @@ static bool bar_responsive(int probe_timeout)
         dup2(fds[1], STDOUT_FILENO);
         dup2(fds[1], STDERR_FILENO);
         close(fds[1]);
-        (void)execv(bar_bin, (char *[]){(char *)bar_bin, "--query", "front_app", (char *)NULL});
+        (void)execv(g_bar_bin, (char *[]){g_bar_bin, "--query", "front_app", (char *)NULL});
         _exit(127);
     }
     close(fds[1]);
@@ -154,6 +211,39 @@ static bool bar_alive(void)
     return false;
 }
 
+// Elapsed seconds of the current bar process, or -1 when it is not running.
+// Used to tell a bar that is still starting up from a wedged one: reloading or
+// killing a bar launchd just restarted throws away a healthy start and can
+// leave the wake-time window server with no bar at all.
+static long bar_uptime(void)
+{
+    FILE *p = popen("/bin/ps -o etime= -p $(/usr/bin/pgrep -x sketchybar | /usr/bin/head -1) 2>/dev/null", "r");
+    if (!p)
+        return -1;
+    char buf[64] = "";
+    if (!fgets(buf, sizeof(buf), p))
+    {
+        pclose(p);
+        return -1;
+    }
+    pclose(p);
+
+    char *s = buf;
+    long days = 0, h = 0, m = 0, sec = 0;
+    char *dash = strchr(s, '-');
+    if (dash)
+    {
+        days = atol(s);
+        s = dash + 1;
+    }
+    int parts = sscanf(s, "%ld:%ld:%ld", &h, &m, &sec);
+    if (parts == 2)
+        return days * 86400 + h * 60 + m;
+    if (parts == 3)
+        return days * 86400 + h * 3600 + m * 60 + sec;
+    return -1;
+}
+
 static void kill_bar(const char *why)
 {
     g_last_action = time(NULL);
@@ -192,25 +282,15 @@ static void kill_bar(const char *why)
     if (pid == 0)
     {
         setsid();
-        execv(bar_bin, (char *[]){(char *)bar_bin, (char *)NULL});
+        execv(g_bar_bin, (char *[]){g_bar_bin, (char *)NULL});
         _exit(127);
     }
 }
 
-static void reload_bar(const char *why)
-{
-    g_last_action = time(NULL);
-    log_msg("reload due to: %s", why);
-    char cmd[2048];
-    snprintf(cmd, sizeof(cmd), "%s --reload 2>/dev/null", bar_bin);
-    system(cmd);
-}
-
-// Recovery after a wake. Reload when the bar comes back, and only if a
-// post-reload probe also fails do we hard-kill. A hard kill is provisional
-// safety: a responsive bar can still be visually stuck (IPC works but the UI
-// is hung), and killing a bar that is mid-reload is harmless because launchd
-// relaunches it.
+// Recovery after a wake. SketchyBar's SkyLight connection can wedge on wake:
+// SLSRemoveSurface (window reset) and SLSConnectionGetPID (window event
+// handling) both block in mach_msg waiting for the window server, so the bar
+// usually does not recover in-process. Probe briefly, then restart it.
 static void recover_after_wake(void)
 {
     log_msg("wake notification");
@@ -222,26 +302,14 @@ static void recover_after_wake(void)
     }
     sleep(2); // let window server / network settle
 
-    write_stamp();
-
-    const int attempts = 4;
+    const int attempts = 3;
     bool recovered = false;
     for (int attempt = 1; attempt <= attempts; attempt++)
     {
         if (bar_responsive(4))
         {
-            log_msg("bar responsive on attempt %d -> reload", attempt);
-            reload_bar("wake, bar responsive");
-            sleep(3);
-            if (bar_responsive(4))
-            {
-                log_msg("bar healthy after reload");
-                recovered = true;
-                break;
-            }
-            log_msg("bar wedged again right after reload -> kill");
-            kill_bar("post-reload unresponsive");
-            recovered = true; // a kill+relaunch IS the recovery
+            log_msg("bar responsive on attempt %d/%d", attempt, attempts);
+            recovered = true;
             break;
         }
         log_msg("bar not responsive on attempt %d/%d", attempt, attempts);
@@ -249,7 +317,7 @@ static void recover_after_wake(void)
     }
     if (!recovered)
     {
-        log_msg("bar never responded in %d attempts -> kill", attempts);
+        log_msg("bar silent for %d attempts -> kill", attempts);
         kill_bar("wake, bar never responded");
     }
 }
@@ -259,7 +327,7 @@ static void recover_after_wake(void)
 // prevents fighting with a legit restart/reload cycle.
 static bool health_check_due(time_t now)
 {
-    return now - g_last_action > 20;
+    return now - g_last_action > 20 && now - g_started_at > 30;
 }
 
 static void periodic_check(void)
@@ -269,12 +337,36 @@ static void periodic_check(void)
         return;
     if (bar_responsive(4))
         return; // healthy
+    long uptime = bar_uptime();
+    if (uptime >= 0 && uptime < 20)
+    {
+        log_msg("periodic probe: bar restarted %lds ago, giving it time", uptime);
+        return;
+    }
     log_msg("periodic probe: bar unresponsive");
     sleep(4);
     if (bar_responsive(4))
         return; // hard-to-say blip, fine now
     g_last_action = now;
     kill_bar("sustained unresponsiveness (periodic)");
+}
+
+static void log_bar_version(void)
+{
+    char cmd[1200];
+    snprintf(cmd, sizeof(cmd), "%s --version 2>/dev/null", g_bar_bin);
+    FILE *p = popen(cmd, "r");
+    if (!p)
+        return;
+    char buf[128] = "";
+    if (fgets(buf, sizeof(buf), p))
+    {
+        char *nl = strchr(buf, '\n');
+        if (nl)
+            *nl = '\0';
+        log_msg("bar version: %s", buf);
+    }
+    pclose(p);
 }
 
 int main(void)
@@ -286,7 +378,17 @@ int main(void)
         _exit(0);
     setsid();
 
+    resolve_bar_bin();
+    system("/bin/mkdir -p \"$HOME/.local/state/sketchybar\" 2>/dev/null");
+    // One serial queue for the wake path and the periodic path: they must never
+    // probe, kill and reload the bar at the same time (that caused duplicate
+    // kill/reload bursts after wake).
+    g_queue = dispatch_queue_create("wake_watch", DISPATCH_QUEUE_SERIAL);
+    g_started_at = time(NULL);
+
     log_msg("wake_watch started pid=%d", (int)getpid());
+    log_msg("bar binary: %s", g_bar_bin);
+    log_bar_version();
 
     @autoreleasepool
     {
@@ -295,15 +397,13 @@ int main(void)
                         object:nil
                          queue:[NSOperationQueue mainQueue]
                     usingBlock:^(NSNotification *_Nonnull note) {
-                        dispatch_async(
-                            dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
-                                recover_after_wake();
-                            });
+                        dispatch_async(g_queue, ^{
+                            recover_after_wake();
+                        });
                     }];
 
-        dispatch_queue_t q = dispatch_get_global_queue(QOS_CLASS_UTILITY, 0);
         dispatch_source_t timer = dispatch_source_create(
-            DISPATCH_SOURCE_TYPE_TIMER, 0, 0, q);
+            DISPATCH_SOURCE_TYPE_TIMER, 0, 0, g_queue);
         if (timer)
         {
             dispatch_source_set_timer(

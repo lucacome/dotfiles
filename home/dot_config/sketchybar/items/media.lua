@@ -74,7 +74,7 @@ sbar.add("item", {
 
 local interrupt = 0
 local function animate_detail(detail)
-  if (not detail) then interrupt = interrupt - 1 end
+  if not detail and interrupt > 0 then interrupt = interrupt - 1 end
   if interrupt > 0 and (not detail) then return end
 
   sbar.animate("tanh", 30, function()
@@ -95,8 +95,15 @@ media_cover:subscribe("media_change", function(env)
       interrupt = interrupt + 1
       sbar.delay(5, animate_detail)
     else
-      media_cover:set({ popup = { drawing = false } })
+      popups.draw("media", false)
     end
+  else
+    -- Another app took over playback: drop the stale Spotify/Music entries.
+    animate_detail(false)
+    media_artist:set({ drawing = false })
+    media_title:set({ drawing = false })
+    media_cover:set({ drawing = false })
+    popups.draw("media", false)
   end
 end)
 
@@ -110,14 +117,14 @@ media_cover:subscribe("mouse.exited", function(env)
 end)
 
 media_cover:subscribe("mouse.clicked", function(env)
-  if media_cover:query().popup.drawing == "off" then
+  if not popups.is_open("media") then
     popups.close_others("media")
   end
-  media_cover:set({ popup = { drawing = "toggle" }})
+  popups.draw("media", "toggle")
 end)
 
 media_title:subscribe("mouse.exited.global", function(env)
-  media_cover:set({ popup = { drawing = false }})
+  popups.draw("media", false)
 end)
 
 popups.track("media", media_cover, function()

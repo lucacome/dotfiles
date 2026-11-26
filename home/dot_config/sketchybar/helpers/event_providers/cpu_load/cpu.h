@@ -48,6 +48,9 @@ static inline void cpu_update(struct cpu *cpu)
 
         uint32_t delta_total = delta_user + delta_system + delta_idle + delta_nice;
 
+        if (delta_total == 0)
+            return;
+
         cpu->user_load = (double)delta_user / (double)delta_total * 100.0;
 
         cpu->sys_load = (double)delta_system / (double)delta_total * 100.0;

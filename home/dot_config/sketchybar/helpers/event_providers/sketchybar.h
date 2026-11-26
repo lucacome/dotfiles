@@ -1,6 +1,5 @@
 #pragma once
 
-#include <mach/arm/kern_return.h>
 #include <mach/mach.h>
 #include <mach/mach_port.h>
 #include <mach/message.h>
@@ -112,10 +111,6 @@ static inline uint32_t format_message(char *message, char *formatted_message)
         caret++;
     }
 
-    if (caret > 0 && formatted_message[caret] == '\0' && formatted_message[caret - 1] == '\0')
-    {
-        caret--;
-    }
     formatted_message[caret] = '\0';
     return caret + 1;
 }

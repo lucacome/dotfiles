@@ -1,4 +1,5 @@
 #include <math.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <net/if.h>
@@ -21,6 +22,8 @@ enum unit
 struct network
 {
     uint32_t row;
+    bool valid;
+    char ifname[IFNAMSIZ];
     struct ifmibdata data;
     struct timeval tv_nm1, tv_n, tv_delta;
 
@@ -29,31 +32,64 @@ struct network
     enum unit up_unit, down_unit;
 };
 
-static inline void ifdata(uint32_t net_row, struct ifmibdata *data)
+static inline bool ifdata(uint32_t net_row, struct ifmibdata *data)
 {
-    static size_t size = sizeof(struct ifmibdata);
-    static int32_t data_option[] = {CTL_NET, PF_LINK, NETLINK_GENERIC, IFMIB_IFDATA, 0, IFDATA_GENERAL};
+    size_t size = sizeof(struct ifmibdata);
+    int32_t data_option[] = {CTL_NET, PF_LINK, NETLINK_GENERIC, IFMIB_IFDATA, 0, IFDATA_GENERAL};
     data_option[4] = net_row;
-    sysctl(data_option, 6, data, &size, NULL, 0);
+    return sysctl(data_option, 6, data, &size, NULL, 0) == 0 && size == sizeof(struct ifmibdata);
+}
+
+static inline bool network_lookup(struct network *net)
+{
+    static int count_option[] = {CTL_NET, PF_LINK, NETLINK_GENERIC, IFMIB_SYSTEM, IFMIB_IFCOUNT};
+    uint32_t interface_count = 0;
+    size_t size = sizeof(uint32_t);
+    if (sysctl(count_option, 5, &interface_count, &size, NULL, 0) != 0)
+        return false;
+
+    struct ifmibdata candidate;
+    for (uint32_t i = 0; i < interface_count; i++)
+    {
+        if (!ifdata(i, &candidate))
+            continue;
+        if (strncmp(candidate.ifmd_name, net->ifname, IFNAMSIZ) == 0)
+        {
+            net->row = i;
+            net->valid = true;
+            net->data = candidate;
+            return true;
+        }
+    }
+    net->valid = false;
+    return false;
 }
 
 static inline void network_init(struct network *net, char *ifname)
 {
     memset(net, 0, sizeof(struct network));
+    snprintf(net->ifname, sizeof(net->ifname), "%s", ifname);
+    if (!network_lookup(net))
+        fprintf(stderr, "network_load: interface %s not found\n", net->ifname);
+}
 
-    static int count_option[] = {CTL_NET, PF_LINK, NETLINK_GENERIC, IFMIB_SYSTEM, IFMIB_IFCOUNT};
-    uint32_t interface_count = 0;
-    size_t size = sizeof(uint32_t);
-    sysctl(count_option, 5, &interface_count, &size, NULL, 0);
-
-    for (int i = 0; i < interface_count; i++)
+static inline void set_rate(double bytes, int *value, enum unit *unit)
+{
+    double exponent = bytes > 0 ? log10(bytes) : 0;
+    if (exponent < 3)
     {
-        ifdata(i, &net->data);
-        if (strcmp(net->data.ifmd_name, ifname) == 0)
-        {
-            net->row = i;
-            break;
-        }
+        *unit = UNIT_BPS;
+        *value = bytes;
+    }
+    else if (exponent < 6)
+    {
+        *unit = UNIT_KBPS;
+        *value = bytes / 1000.0;
+    }
+    else
+    {
+        *unit = UNIT_MBPS;
+        *value = bytes / 1000000.0;
     }
 }
 
@@ -63,48 +99,29 @@ static inline void network_update(struct network *net)
     timersub(&net->tv_n, &net->tv_nm1, &net->tv_delta);
     net->tv_nm1 = net->tv_n;
 
+    if (!net->valid && !network_lookup(net))
+        return;
+
     uint64_t ibytes_nm1 = net->data.ifmd_data.ifi_ibytes;
     uint64_t obytes_nm1 = net->data.ifmd_data.ifi_obytes;
-    ifdata(net->row, &net->data);
+    if (!ifdata(net->row, &net->data))
+    {
+        net->valid = false;
+        return;
+    }
 
     double time_scale = (net->tv_delta.tv_sec + 1e-6 * net->tv_delta.tv_usec);
     if (time_scale < 1e-6 || time_scale > 1e2)
         return;
-    double delta_ibytes = (double)(net->data.ifmd_data.ifi_ibytes - ibytes_nm1) / time_scale;
-    double delta_obytes = (double)(net->data.ifmd_data.ifi_obytes - obytes_nm1) / time_scale;
 
-    double exponent_ibytes = log10(delta_ibytes);
-    double exponent_obytes = log10(delta_obytes);
+    // Counters reset on reconnect; a decrease is not negative traffic.
+    double delta_ibytes = net->data.ifmd_data.ifi_ibytes >= ibytes_nm1
+                              ? (double)(net->data.ifmd_data.ifi_ibytes - ibytes_nm1) / time_scale
+                              : 0;
+    double delta_obytes = net->data.ifmd_data.ifi_obytes >= obytes_nm1
+                              ? (double)(net->data.ifmd_data.ifi_obytes - obytes_nm1) / time_scale
+                              : 0;
 
-    if (exponent_ibytes < 3)
-    {
-        net->down_unit = UNIT_BPS;
-        net->down = delta_ibytes;
-    }
-    else if (exponent_ibytes < 6)
-    {
-        net->down_unit = UNIT_KBPS;
-        net->down = delta_ibytes / 1000.0;
-    }
-    else if (exponent_ibytes < 9)
-    {
-        net->down_unit = UNIT_MBPS;
-        net->down = delta_ibytes / 1000000.0;
-    }
-
-    if (exponent_obytes < 3)
-    {
-        net->up_unit = UNIT_BPS;
-        net->up = delta_obytes;
-    }
-    else if (exponent_obytes < 6)
-    {
-        net->up_unit = UNIT_KBPS;
-        net->up = delta_obytes / 1000.0;
-    }
-    else if (exponent_obytes < 9)
-    {
-        net->up_unit = UNIT_MBPS;
-        net->up = delta_obytes / 1000000.0;
-    }
+    set_rate(delta_ibytes, &net->down, &net->down_unit);
+    set_rate(delta_obytes, &net->up, &net->up_unit);
 }
