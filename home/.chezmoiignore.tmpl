@@ -24,6 +24,9 @@ raycast-commands
 .hushlogin
 .local/bin/nvim
 .local/share/fonts
+# helpers/init.lua rebuilds these on every config load
+.config/sketchybar/helpers/**/bin
+.config/sketchybar/helpers/build.log
 {{ end }}
 
 {{ if not .personal }}
@@ -37,7 +40,3 @@ raycast-commands
 .ssh/**
 .config/tmux
 {{ end }}
-
-# helpers/init.lua rebuilds these on every config load
-.config/sketchybar/helpers/**/bin
-.config/sketchybar/helpers/build.log
