@@ -39,9 +39,11 @@ raycast-commands
 {{ end }}
 
 # built by helpers/init.lua on every config load
+{{ if eq .chezmoi.os "darwin" }}
 .config/sketchybar/helpers/event_providers/cpu_load/bin
 .config/sketchybar/helpers/event_providers/network_load/bin
 .config/sketchybar/helpers/frontmost_watch/bin
 .config/sketchybar/helpers/menus/bin
 .config/sketchybar/helpers/wake_watch/bin
 .config/sketchybar/helpers/build.log
+{{ end }}
