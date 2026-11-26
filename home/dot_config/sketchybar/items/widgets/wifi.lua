@@ -2,6 +2,7 @@ local icons = require("icons")
 local colors = require("colors")
 local settings = require("settings")
 local utils = require("helpers.utils")
+local popups = require("helpers.popups")
 
 local trim = utils.trim
 local parse_lines = utils.parse_lines
@@ -48,9 +49,9 @@ local function detect_service(iface, callback)
   end)
 end
 
-local function apply_network_icon()
+local function apply_network_icon(force_offline)
   sbar.exec("ipconfig getifaddr " .. active_interface .. " 2>/dev/null", function(addr)
-    local connected = trim(addr) ~= ""
+    local connected = not force_offline and trim(addr) ~= ""
     wifi:set({
       icon = {
         string = connected and (active_is_wifi and icons.wifi.connected or icons.wifi.ethernet)
@@ -64,22 +65,25 @@ end
 local function refresh_icon()
   sbar.exec("route -n get default 2>/dev/null | awk '/interface:/{print $2; exit}'", function(out)
     local iface = trim(out)
-    if iface ~= "" then
-      if iface ~= active_interface then
-        active_interface = iface
-      end
-      if iface ~= provider_interface then
-        restart_network_provider(iface)
-      end
-      if iface ~= service_iface then
-        service_iface = iface
-        detect_service(iface, function(service_name, is_wifi)
-          active_service = service_name
-          active_is_wifi = is_wifi
-          apply_network_icon()
-        end)
-        return
-      end
+    if iface == "" then
+      -- No default route: offline, even if the interface still holds a lease.
+      apply_network_icon(true)
+      return
+    end
+    if iface ~= active_interface then
+      active_interface = iface
+    end
+    if iface ~= provider_interface then
+      restart_network_provider(iface)
+    end
+    if iface ~= service_iface then
+      service_iface = iface
+      detect_service(iface, function(service_name, is_wifi)
+        active_service = service_name
+        active_is_wifi = is_wifi
+        apply_network_icon()
+      end)
+      return
     end
     apply_network_icon()
   end)
@@ -220,21 +224,20 @@ local function set_dns_servers(servers)
 end
 
 local function hide_details()
-  wifi_bracket:set({ popup = { drawing = false } })
+  popups.draw("wifi", false)
 end
 
-local popups = require("helpers.popups")
 popups.track("wifi", wifi_bracket, hide_details)
 
 local function toggle_details()
-  local should_draw = wifi_bracket:query().popup.drawing == "off"
+  local should_draw = not popups.is_open("wifi")
   if not should_draw then
     hide_details()
     return
   end
 
   popups.close_others("wifi")
-  wifi_bracket:set({ popup = { drawing = true } })
+  popups.draw("wifi", true)
 
   -- Detect current interface on demand (safe: user-triggered, not wake-triggered).
   sbar.exec("route -n get default 2>/dev/null | awk '/interface:/{print $2; exit}'", function(out)
@@ -263,19 +266,22 @@ local function toggle_details()
           if not connected then
             ssid:set({ icon = { string = icons.wifi.disconnected }, label = { string = "Not Connected" } })
           else
-            sbar.exec("networksetup -listpreferredwirelessnetworks " .. active_interface
-              .. " 2>/dev/null | grep -v '^Preferred networks on' | head -1 | xargs", function(preferred)
-              local name = trim(preferred)
+            -- Ask the interface for the network it is actually on. The
+            -- preferred-network list is only a fallback: it is ordered by
+            -- preference, not by what is currently connected.
+            sbar.exec("ipconfig getsummary " .. active_interface
+              .. " | awk -F ' SSID : ' '/ SSID : / {print $2}'", function(s)
+              local name = trim(s)
               if name ~= "" and not name:lower():find("<redacted>", 1, true) then
                 ssid:set({ icon = { string = icons.wifi.connected }, label = { string = name } })
               else
-                sbar.exec("ipconfig getsummary " .. active_interface
-                  .. " | awk -F ' SSID : ' '/ SSID : / {print $2}'", function(s)
-                  local n = trim(s)
-                  ssid:set({
-                    icon = { string = icons.wifi.connected },
-                    label = { string = (n ~= "" and not n:lower():find("<redacted>", 1, true)) and n or "Wi-Fi" },
-                  })
+                sbar.exec("networksetup -listpreferredwirelessnetworks " .. active_interface
+                  .. " 2>/dev/null | grep -v '^Preferred networks on' | head -1 | xargs", function(preferred)
+                  local fallback = trim(preferred)
+                  if fallback == "" or fallback:lower():find("<redacted>", 1, true) then
+                    fallback = "Wi-Fi"
+                  end
+                  ssid:set({ icon = { string = icons.wifi.connected }, label = { string = fallback } })
                 end)
               end
             end)
@@ -358,7 +364,11 @@ wifi:subscribe("mouse.clicked", toggle_details)
 wifi:subscribe("mouse.exited.global", hide_details)
 
 copy_label_to_clipboard = function(env)
-  local label = sbar.query(env.NAME).label.value
+  -- sbar.query decodes JSON; a label containing quotes can break the decode
+  -- (upstream fix #884 is unreleased), so treat a failed query as "no label".
+  local ok, q = pcall(function() return sbar.query(env.NAME) end)
+  local label = ok and q and q.label and q.label.value
+  if not label then return end
   sbar.exec("printf '%s' " .. shell_quote(label) .. " | pbcopy")
   sbar.set(env.NAME, { label = { string = icons.clipboard, align = "center" } })
   sbar.delay(1, function()

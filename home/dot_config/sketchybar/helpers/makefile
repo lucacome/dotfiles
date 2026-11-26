@@ -1,5 +1,5 @@
 all:
-	(cd event_providers && $(MAKE)) >/dev/null
-	(cd menus && $(MAKE)) >/dev/null
-	(cd frontmost_watch && $(MAKE)) >/dev/null
-	(cd wake_watch && $(MAKE)) >/dev/null
+	(cd event_providers && $(MAKE))
+	(cd menus && $(MAKE))
+	(cd frontmost_watch && $(MAKE))
+	(cd wake_watch && $(MAKE))

@@ -3,6 +3,7 @@ local icons = require("icons")
 local settings = require("settings")
 local popups = require("helpers.popups")
 
+local utils = require("helpers.utils")
 local popup_width = 250
 
 local volume_percent = sbar.add("item", "widgets.volume1", {
@@ -93,11 +94,9 @@ volume_percent:subscribe("volume_change", function(env)
 end)
 
 local function volume_collapse_details()
-  -- query() can return nil when the bar is rebuilding; guard instead of
-  -- erroring on every app switch.
-  local q = volume_bracket:query()
-  if not (q and q.popup and q.popup.drawing == "on") then return end
-  volume_bracket:set({ popup = { drawing = false } })
+  -- Tracked state can lag a bar rebuild; draw(false) is idempotent either way.
+  if not popups.is_open("volume") then return end
+  popups.draw("volume", false)
   sbar.remove('/volume.device\\.*/')
 end
 
@@ -108,12 +107,12 @@ local function volume_toggle_details(env)
     return
   end
 
-  local should_draw = volume_bracket:query().popup.drawing == "off"
+  local should_draw = not popups.is_open("volume")
   if should_draw then
     popups.close_others("volume")
-    volume_bracket:set({ popup = { drawing = true } })
+    popups.draw("volume", true)
     sbar.exec("SwitchAudioSource -t output -c", function(result)
-      current_audio_device = result:sub(1, -2)
+      current_audio_device = utils.trim(result)
       sbar.exec("SwitchAudioSource -a -t output", function(available)
         local current = current_audio_device
         local counter = 0
@@ -128,7 +127,7 @@ local function volume_toggle_details(env)
             width = popup_width,
             align = "center",
             label = { string = device, color = color },
-            click_script = 'SwitchAudioSource -s "' .. device .. '" && sketchybar --set /volume.device\\.*/ label.color=' .. colors.grey .. ' --set $NAME label.color=' .. colors.white
+            click_script = 'SwitchAudioSource -s ' .. utils.shell_quote(device) .. ' && sketchybar --set /volume.device\\.*/ label.color=' .. colors.grey .. ' --set $NAME label.color=' .. colors.white
 
           })
           counter = counter + 1
@@ -140,11 +139,36 @@ local function volume_toggle_details(env)
   end
 end
 
+-- One osascript in flight at a time; deltas accumulate meanwhile. Otherwise a
+-- flick starts N osascripts that all read the same starting volume and the
+-- steps are lost.
+local pending_volume_delta = 0
+local volume_exec_busy = false
+local volume_flush_scheduled = false
+
+local function flush_volume_delta()
+  if volume_exec_busy then return end
+  local delta = math.floor(pending_volume_delta)
+  if delta == 0 then return end
+  pending_volume_delta = pending_volume_delta - delta
+  volume_exec_busy = true
+  sbar.exec('osascript -e "set volume output volume (output volume of (get volume settings) + ' .. delta .. ')"', function()
+    volume_exec_busy = false
+    flush_volume_delta()
+  end)
+end
+
 local function volume_scroll(env)
   local delta = env.INFO.delta
   if not (env.INFO.modifier == "ctrl") then delta = delta * 10.0 end
+  pending_volume_delta = pending_volume_delta + delta
 
-  sbar.exec('osascript -e "set volume output volume (output volume of (get volume settings) + ' .. delta .. ')"')
+  if volume_flush_scheduled then return end
+  volume_flush_scheduled = true
+  sbar.delay(0.05, function()
+    volume_flush_scheduled = false
+    flush_volume_delta()
+  end)
 end
 
 volume_icon:subscribe("mouse.clicked", volume_toggle_details)

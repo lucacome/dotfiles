@@ -3,18 +3,21 @@ local icons = require("icons")
 local settings = require("settings")
 local app_icons = require("helpers.app_icons")
 local utils = require("helpers.utils")
-local wake = require("helpers.wake")
 
-local trim = utils.trim
-local parse_lines = utils.parse_lines
 local shell_quote = utils.shell_quote
 
 local spaces = {}
 local space_brackets = {}
 local space_paddings = {}
+local workspace_display = {}
 local workspace_order = {}
-local aerospace_waking = false
+local refresh_gen = 0
+local refresh_pending = false
 
+-- Known workspaces are created in this order at load, which fixes their
+-- left-to-right position; the list cannot come from the CLI without async
+-- ordering problems. Any other workspace is appended the first time AeroSpace
+-- reports it.
 local fixed_workspaces = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "Z", "X", "C", "V", "B", "N", "M" }
 local ignored_apps = { Finder = true }
 
@@ -69,6 +72,16 @@ local function set_visible(ws, visible)
   end)
 end
 
+-- Each workspace belongs to one monitor; show its item only on that monitor's
+-- bar. Updated when AeroSpace moves a workspace to another display.
+local function set_display(ws, monitor)
+  if workspace_display[ws] == monitor then return end
+  workspace_display[ws] = monitor
+  if spaces[ws] then spaces[ws]:set({ display = monitor }) end
+  if space_brackets[ws] then space_brackets[ws]:set({ display = monitor }) end
+  if space_paddings[ws] then space_paddings[ws]:set({ display = monitor }) end
+end
+
 local refresh_workspaces
 
 local function create_workspace_item(ws)
@@ -111,7 +124,6 @@ local function create_workspace_item(ws)
   })
 
   space_paddings[ws] = sbar.add("item", ws_name("padding", ws), {
-    script = "",
     width = 0,
   })
 
@@ -136,76 +148,92 @@ local function initialize()
 end
 
 refresh_workspaces = function()
-  sbar.exec("aerospace list-workspaces --focused --format '%{workspace}'", function(focused_out)
-    local focused = trim((parse_lines(focused_out))[1] or "")
-    if focused == "" then focused = nil end
+  -- Three events can fire for one workspace switch. Every call takes a
+  -- generation number and drops its reply if a newer refresh started, so a
+  -- slow older answer cannot overwrite the current highlight.
+  refresh_gen = refresh_gen + 1
+  local gen = refresh_gen
 
-    -- Skip if aerospace isn't responding (prevents flooding during wake or restart)
-    if not focused and #parse_lines(focused_out) == 0 then return end
+  -- AeroSpace 0.20+ reports focus, visibility and monitor per workspace, so
+  -- one call replaces the old --focused + --visible pair. --json is decoded by
+  -- sbar.exec, so nothing is parsed from text.
+  sbar.exec("aerospace list-workspaces --all --format '%{workspace}%{workspace-is-focused}%{workspace-is-visible}%{monitor-appkit-nsscreen-screens-id}' --json", function(ws_list)
+    if gen ~= refresh_gen or type(ws_list) ~= "table" then return end
 
-    sbar.exec("aerospace list-workspaces --visible --monitor all --format '%{workspace}'", function(visible_out)
-      local visible_set = {}
-      for _, ws in ipairs(parse_lines(visible_out)) do
-        visible_set[trim(ws)] = true
+    -- Skip if aerospace isn't responding (prevents flood/hide during wake)
+    if #ws_list == 0 then return end
+
+    local focused = nil
+    local visible_set = {}
+    for _, entry in ipairs(ws_list) do
+      local ws = entry.workspace
+      if ws and ws ~= "" then
+        if not spaces[ws] then
+          table.insert(workspace_order, ws)
+          create_workspace_item(ws)
+        end
+        if entry["workspace-is-focused"] then focused = ws end
+        if entry["workspace-is-visible"] then visible_set[ws] = true end
+        local monitor = entry["monitor-appkit-nsscreen-screens-id"]
+        if type(monitor) == "number" then
+          set_display(ws, math.floor(monitor))
+        end
+      end
+    end
+
+    sbar.exec("aerospace list-windows --all --format '%{workspace}%{app-name}' --json", function(win_list)
+      if gen ~= refresh_gen or type(win_list) ~= "table" then return end
+      local apps_by_ws = {}
+      for _, ws in ipairs(workspace_order) do apps_by_ws[ws] = {} end
+
+      for _, win in ipairs(win_list) do
+        local ws = win.workspace
+        local app = win["app-name"]
+        if apps_by_ws[ws] and app and app ~= "" and not ignored_apps[app] then
+          table.insert(apps_by_ws[ws], app)
+        end
       end
 
-      sbar.exec("aerospace list-windows --all --format '%{workspace}\\t%{app-name}'", function(wins_out)
-        local apps_by_ws = {}
-        for _, ws in ipairs(workspace_order) do apps_by_ws[ws] = {} end
-
-        for _, line in ipairs(parse_lines(wins_out)) do
-          local ws, app = line:match("^(.-)\\t(.*)$")
-          if ws then
-            ws = trim(ws)
-            app = trim(app or "")
-            if apps_by_ws[ws] and app ~= "" and not ignored_apps[app] then
-              table.insert(apps_by_ws[ws], app)
-            end
-          end
+      for _, ws in ipairs(workspace_order) do
+        local apps = apps_by_ws[ws] or {}
+        local visible = #apps > 0 or ws == focused or visible_set[ws]
+        if spaces[ws] then
+          spaces[ws]:set({ drawing = visible, label = icon_line(apps) })
         end
+        set_visible(ws, visible)
+      end
 
-        for _, ws in ipairs(workspace_order) do
-          local apps = apps_by_ws[ws] or {}
-          local visible = #apps > 0 or ws == focused or visible_set[ws]
-          if spaces[ws] then
-            spaces[ws]:set({ drawing = visible, label = icon_line(apps) })
-          end
-          set_visible(ws, visible)
-        end
-
-        set_selected(focused, visible_set)
-      end)
+      set_selected(focused, visible_set)
     end)
   end)
 end
 
 local observer = sbar.add("item", { drawing = false, updates = true })
 
+-- Coalesce bursts of events into one refresh.
+local function schedule_refresh()
+  if refresh_pending then return end
+  refresh_pending = true
+  sbar.delay(0, function()
+    refresh_pending = false
+    refresh_workspaces()
+  end)
+end
+
 sbar.add("event", "aerospace_workspace_change")
 sbar.add("event", "aerospace_focus_changed")
 
 observer:subscribe("space_windows_change", function()
-  if not aerospace_waking then refresh_workspaces() end
+  schedule_refresh()
 end)
 
 observer:subscribe("aerospace_focus_changed", function()
-  if not aerospace_waking then refresh_workspaces() end
+  schedule_refresh()
 end)
 
 observer:subscribe("aerospace_workspace_change", function()
-  if not aerospace_waking then refresh_workspaces() end
+  schedule_refresh()
 end)
-
--- The watchdog reloads the bar shortly after a wake. During that reload the
--- window server is still churning out space_windows_change events, so keep
--- the refresh storm under control and re-poll once aerospace has caught up.
-if wake.recent_woke(60) then
-  aerospace_waking = true
-  sbar.delay(15, function()
-    aerospace_waking = false
-    refresh_workspaces()
-  end)
-end
 
 initialize()
 
@@ -236,7 +264,7 @@ spaces_indicator:subscribe("swap_menus_and_spaces", function()
   spaces_indicator:set({
     icon = currently_on and icons.switch.off or icons.switch.on,
   })
-  if not currently_on then refresh_workspaces() end
+  if not currently_on then schedule_refresh() end
 end)
 
 spaces_indicator:subscribe("mouse.entered", function()

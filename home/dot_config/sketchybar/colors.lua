@@ -4,15 +4,12 @@ return {
     red = 0xfffc5d7c,
     green = 0xff9ed072,
     blue = 0xff76cce0,
-    yellow = 0xffe7c664,
     orange = 0xfff39660,
-    magenta = 0xffb39df3,
     grey = 0xff7f8490,
     transparent = 0x00000000,
 
     bar = {
-        bg = 0xf02c2e34,
-        border = 0xff2c2e34
+        bg = 0xf02c2e34
     },
     popup = {
         bg = 0xc02c2e34,

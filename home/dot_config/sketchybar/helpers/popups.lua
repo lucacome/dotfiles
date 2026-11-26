@@ -6,15 +6,15 @@
 --      number) every 0.5s while a popup is open and collapses it the instant
 --      it changes. This is deterministic and covers same-app window clicks,
 --      leaving the bar, etc. (mouse.exited.* is unreliable in SketchyBar).
+-- Open state is tracked here, not queried: the old check cost five IPC
+-- round-trips per second even with every popup closed.
 local M = {}
+
+local utils = require("helpers.utils")
 
 local registry = {}
 local front_snapshot = nil
 local checking_front = false
-
-local function trim(value)
-  return tostring(value or ""):gsub("^%s+", ""):gsub("%s+$", "")
-end
 
 local function collapse_all()
   for _, r in pairs(registry) do
@@ -28,10 +28,7 @@ end
 
 local function any_open()
   for _, r in pairs(registry) do
-    local q = r.target:query()
-    if q and q.popup and q.popup.drawing == "on" then
-      return true
-    end
+    if r.open then return true end
   end
   return false
 end
@@ -47,7 +44,7 @@ local function check_frontmost()
   checking_front = true
   sbar.exec("$CONFIG_DIR/helpers/frontmost_watch/bin/frontmost_watch", function(out)
     checking_front = false
-    local sig = trim(out)
+    local sig = utils.trim(out)
     if not any_open() then
       front_snapshot = nil
       return
@@ -81,7 +78,31 @@ observer:subscribe("routine", function()
 end)
 
 function M.track(name, target, close)
-  registry[name] = { target = target, close = close }
+  registry[name] = {
+    target = target,
+    open = false,
+    close = function()
+      close()
+      registry[name].open = false
+    end,
+  }
+end
+
+function M.is_open(name)
+  local r = registry[name]
+  return r ~= nil and r.open
+end
+
+-- Every popup open/close goes through here so the tracked state stays true.
+-- drawing is true, false or "toggle".
+function M.draw(name, drawing)
+  local r = registry[name]
+  if not r then return end
+  if drawing == "toggle" then
+    drawing = not r.open
+  end
+  r.open = drawing and true or false
+  r.target:set({ popup = { drawing = r.open } })
 end
 
 function M.close_others(name)

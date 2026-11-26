@@ -1,7 +1,7 @@
 local colors = require("colors")
 local settings = require("settings")
 local popups = require("helpers.popups")
-local wake = require("helpers.wake")
+local weather_parse = require("helpers.weather_parse")
 
 -- SF Symbols glyphs (U+100000 supplementary plane, rendered by SF Pro / sf-symbols font)
 local sf_icons = {
@@ -145,24 +145,6 @@ for i = 1, 3 do
   forecast_rows[i] = popup_row("Day " .. i .. ":")
 end
 
-local function parse_12h(time)
-  -- wttr.in astronomy times like "06:17 AM" / "08:14 PM"
-  local hh, mm, ap = time:match("(%d+):(%d+)%s*(%a+)")
-  if not hh then return nil end
-  local hour = tonumber(hh)
-  ap = (ap or ""):upper()
-  if ap == "PM" and hour < 12 then hour = hour + 12 end
-  if ap == "AM" and hour == 12 then hour = 0 end
-  return hour, mm
-end
-
-local function day_name(date)
-  -- wttr.in dates like "2026-08-05" -> "Wed"
-  local y, m, d = date:match("(%d+)-(%d+)-(%d+)")
-  if not y then return date end
-  return os.date("%A", os.time({ year = tonumber(y), month = tonumber(m), day = tonumber(d), hour = 12 }))
-end
-
 local function icon_for(code, is_night)
   local key = code_icons[code] or "cloud"
   if key == "sun" and is_night then return sf_icons.moon end
@@ -197,13 +179,7 @@ local function update_weather()
       lines[#lines + 1] = line
     end
 
-    local cur = {}
-    local fields = lines[1] or ""
-    local i = 1
-    for field in fields:gmatch("[^\t]+") do
-      cur[i] = field
-      i = i + 1
-    end
+    local cur = weather_parse.tsv(lines[1])
 
     local temp, code = cur[1], tonumber(cur[7])
     if temp == nil or temp == "" then
@@ -214,8 +190,8 @@ local function update_weather()
     -- Day/night from real sunrise/sunset times
     local is_night = false
     local hour = tonumber(os.date("%H"))
-    local sun_rise_h = parse_12h(cur[8] or "")
-    local sun_set_h = parse_12h(cur[9] or "")
+    local sun_rise_h = weather_parse.parse_12h(cur[8] or "")
+    local sun_set_h = weather_parse.parse_12h(cur[9] or "")
     if hour and sun_rise_h and sun_set_h then
       is_night = hour < sun_rise_h or hour >= sun_set_h
     end
@@ -247,15 +223,9 @@ local function update_weather()
     row("sun", string.format("%s / %s", cur[8] or "--", cur[9] or "--"))
 
     for i = 1, 3 do
-      local f = lines[i + 1] or ""
-      local flds = {}
-      local j = 1
-      for field in f:gmatch("[^\t]+") do
-        flds[j] = field
-        j = j + 1
-      end
+      local flds = weather_parse.tsv(lines[i + 1])
       forecast_rows[i]:set({
-        icon = { string = day_name(flds[1] or "--") .. ":" },
+        icon = { string = weather_parse.day_name(flds[1] or "--") .. ":" },
         label = {
           string = string.format("%s°C/%s°C", flds[2] or "--", flds[3] or "--"),
         },
@@ -267,24 +237,17 @@ end
 weather:subscribe({ "routine", "forced" }, update_weather)
 
 weather:subscribe("mouse.clicked", function()
-  local should_draw = weather_bracket:query().popup.drawing == "off"
-  if not should_draw then
-    weather_bracket:set({ popup = { drawing = false } })
+  if not popups.is_open("weather") then
+    popups.close_others("weather")
+    popups.draw("weather", true)
+    update_weather()
     return
   end
-  popups.close_others("weather")
-  weather_bracket:set({ popup = { drawing = true } })
-update_weather()
-
--- The watchdog reloads the bar shortly after a wake; the network may not be
--- back yet when this module first runs, so retry once the system has settled.
-if wake.recent_woke(20) then
-  sbar.delay(8, update_weather)
-end
+  popups.draw("weather", false)
 end)
 
 weather:subscribe("mouse.exited.global", function()
-  weather_bracket:set({ popup = { drawing = false } })
+  popups.draw("weather", false)
 end)
 
 popups.track("weather", weather_bracket, function()

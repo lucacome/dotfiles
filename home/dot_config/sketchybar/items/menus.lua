@@ -1,5 +1,4 @@
 local colors = require("colors")
-local icons = require("icons")
 local settings = require("settings")
 
 local menu_watcher = sbar.add("item", {
@@ -42,17 +41,41 @@ local menu_padding = sbar.add("item", "menu.padding", {
   width = 5
 })
 
-local function update_menus(env)
-  sbar.exec("$CONFIG_DIR/helpers/menus/bin/menus -l", function(menus)
-    sbar.set('/menu\\..*/', { drawing = false })
-    menu_padding:set({ drawing = true })
-    local id = 1
-    for menu in string.gmatch(menus, '[^\r\n]+') do
-      if id <= max_items then
-        menu_items[id]:set( { label = menu, drawing = true } )
-      else break end
-      id = id + 1
+local menu_gen = 0
+local warned_no_menus = false
+
+local function draw_menus(menus)
+  sbar.set('/menu\\..*/', { drawing = false })
+  menu_padding:set({ drawing = true })
+
+  local id = 1
+  for menu in string.gmatch(menus, '[^\r\n]+') do
+    if id > max_items then break end
+    menu_items[id]:set({ label = menu, drawing = true })
+    id = id + 1
+  end
+
+  if id == 1 then
+    -- menus -l prints nothing when Accessibility is denied; say so instead of
+    -- hiding the whole left side.
+    menu_items[1]:set({ label = "menus need Accessibility", drawing = true })
+    if not warned_no_menus then
+      warned_no_menus = true
+      print("[sketchybar] menus helper returned nothing; grant Accessibility (see README)")
     end
+  else
+    warned_no_menus = false
+  end
+end
+
+local function update_menus()
+  -- An -l reply can arrive after the user switched back to spaces; only the
+  -- newest request may draw.
+  menu_gen = menu_gen + 1
+  local gen = menu_gen
+  sbar.exec("$CONFIG_DIR/helpers/menus/bin/menus -l", function(menus)
+    if gen ~= menu_gen then return end
+    draw_menus(type(menus) == "string" and menus or "")
   end)
 end
 
@@ -61,15 +84,14 @@ menu_watcher:subscribe("front_app_switched", update_menus)
 space_menu_swap:subscribe("swap_menus_and_spaces", function(env)
   local drawing = menu_items[1]:query().geometry.drawing == "on"
   if drawing then
-    menu_watcher:set( { updates = false })
+    menu_gen = menu_gen + 1
+    menu_watcher:set({ updates = false })
     sbar.set("/menu\\..*/", { drawing = false })
     sbar.set("front_app", { drawing = true })
   else
-    menu_watcher:set( { updates = true })
+    menu_watcher:set({ updates = true })
     sbar.set("/space\\..*/", { drawing = false })
     sbar.set("front_app", { drawing = false })
     update_menus()
   end
 end)
-
-return menu_watcher
