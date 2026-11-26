@@ -66,10 +66,11 @@ on-mode-changed = []
 on-window-detected = [
     # Chat apps: float on V
     {
-        if = 'test %{app-bundle-id} = org.whispersystems.signal-desktop || test %{app-bundle-id} = com.hnc.Discord || test %{app-bundle-id} = com.apple.MobileSMS || test %{app-bundle-id} = net.whatsapp.WhatsApp',
+        if = 'test %{app-name} ~= signal || test %{app-name} ~= discord || test %{app-name} ~= messages || test %{app-name} ~= whatsapp',
         run = ['move-node-to-workspace V', 'layout floating'],
     },
     { if = 'test %{app-bundle-id} = com.mitchellh.ghostty', run = ['move-node-to-workspace 1', 'layout tiling'] },
+    { if = 'test %{app-bundle-id} = com.superlogical.rex', run = ['move-node-to-workspace 3', 'layout tiling'] },
     { if = 'test %{app-bundle-id} ~= insiders', run = ['move-node-to-workspace 2', 'layout tiling'] },
     { if = 'test %{app-bundle-id} ~= brave', run = 'layout tiling' },
     { if = 'test %{app-bundle-id} ~= safari', run = ['move-node-to-workspace 6', 'layout tiling'] },
@@ -183,7 +184,7 @@ on-window-detected = [
 
     # See: https://nikitabobko.github.io/AeroSpace/commands#workspace-back-and-forth
     alt-tab = 'workspace-back-and-forth'
-    # See: https://nikitabobko.github.io/AeroSpace/commands#move-workspace-to-monitor
+    # See: https://nikitabobko.github.io/AeroSpace/commands#focus-monitor
     alt-shift-tab = 'focus-monitor --wrap-around right'
 
     # See: https://nikitabobko.github.io/AeroSpace/commands#mode
