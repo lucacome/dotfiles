@@ -16,6 +16,10 @@ exec-on-workspace-change = ['/bin/bash', '-c',
 # Start AeroSpace at login
 start-at-login = true
 
+# Reload the config automatically when the file is saved.
+# Requires one manual `aerospace reload-config` after enabling.
+auto-reload-config = true
+
 # Normalizations. See: https://nikitabobko.github.io/AeroSpace/guide#normalization
 enable-normalization-flatten-containers = true
 enable-normalization-opposite-orientation-for-nested-containers = true
@@ -57,6 +61,21 @@ persistent-workspaces = ["1", "2", "3", "4", "5",
 # See: https://nikitabobko.github.io/AeroSpace/guide#binding-modes
 # See: https://nikitabobko.github.io/AeroSpace/commands#mode
 on-mode-changed = []
+
+# See: https://nikitabobko.github.io/AeroSpace/guide#on-window-detected-callback
+on-window-detected = [
+    # Chat apps: float on V
+    {
+        if = 'test %{app-bundle-id} = org.whispersystems.signal-desktop || test %{app-bundle-id} = com.hnc.Discord || test %{app-bundle-id} = com.apple.MobileSMS || test %{app-bundle-id} = net.whatsapp.WhatsApp',
+        run = ['move-node-to-workspace V', 'layout floating'],
+    },
+    { if = 'test %{app-bundle-id} = com.mitchellh.ghostty', run = ['move-node-to-workspace 1', 'layout tiling'] },
+    { if = 'test %{app-bundle-id} ~= insiders', run = ['move-node-to-workspace 2', 'layout tiling'] },
+    { if = 'test %{app-bundle-id} ~= brave', run = 'layout tiling' },
+    { if = 'test %{app-bundle-id} ~= safari', run = ['move-node-to-workspace 6', 'layout tiling'] },
+    # Everything else floats
+    { if = 'true', run = 'layout floating' },
+]
 
 # Possible values: (qwerty|dvorak|colemak)
 # See https://nikitabobko.github.io/AeroSpace/guide#key-mapping
@@ -204,38 +223,3 @@ on-mode-changed = []
     alt-shift-k = ['join-with up', 'mode main']
     alt-shift-l = ['join-with right', 'mode main']
 
-[[on-window-detected]]
-    if.app-name-regex-substring = 'signal'
-    run = ["move-node-to-workspace V", "layout floating"]
-
-[[on-window-detected]]
-    if.app-name-regex-substring = 'discord'
-    run = ["move-node-to-workspace V", "layout floating"]
-
-[[on-window-detected]]
-    if.app-name-regex-substring = 'messages'
-    run = ["move-node-to-workspace V", "layout floating"]
-
-[[on-window-detected]]
-    if.app-name-regex-substring = 'whatsapp'
-    run = ["move-node-to-workspace V", "layout floating"]
-
-[[on-window-detected]]
-    if.app-name-regex-substring = 'ghostty'
-    run= ["move-node-to-workspace 1", "layout tiling"]
-
-[[on-window-detected]]
-    if.app-name-regex-substring = 'insiders'
-    run = ["move-node-to-workspace 2", "layout tiling"]
-
-[[on-window-detected]]
-    if.app-name-regex-substring = 'brave'
-    run = 'layout tiling'
-
-[[on-window-detected]]
-    if.app-name-regex-substring = 'safari'
-    run = ["move-node-to-workspace 6", "layout tiling"]
-
-[[on-window-detected]]
-    check-further-callbacks = true
-    run = 'layout floating'
