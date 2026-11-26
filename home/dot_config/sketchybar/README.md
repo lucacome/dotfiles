@@ -12,6 +12,7 @@ Right: front app, clock, media, battery, volume, wifi, CPU/RAM, weather.
 | Tool | Used for |
 | --- | --- |
 | `sketchybar` | the bar (`brew install sketchybar`) |
+| Xcode Command Line Tools | builds `helpers/` (run automatically on config load) |
 | SbarLua | `~/.local/share/sketchybar_lua/sketchybar.so` |
 | `aerospace` | workspace list and clicking |
 | `jq`, `curl` | weather (`wttr.in`) |
