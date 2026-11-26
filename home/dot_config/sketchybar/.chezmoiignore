@@ -1,0 +1,3 @@
+# helpers/init.lua rebuilds these on every config load
+helpers/**/bin
+helpers/build.log
