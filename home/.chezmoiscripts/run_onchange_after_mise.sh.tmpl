@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 # mise.toml hash: {{ include "dot_config/mise/config.toml.tmpl" | sha256sum }}
 mise install -y
 

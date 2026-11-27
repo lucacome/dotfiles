@@ -22,7 +22,7 @@
 {{/* work around unreliable hostname on darwin */}}
 {{- $hostname := .chezmoi.hostname -}}
 {{- if eq .chezmoi.os "darwin" -}}
-{{-   $hostname := output "scutil" "--get" "ComputerName" | trim -}}
+{{-   $hostname = output "scutil" "--get" "ComputerName" | trim -}}
 {{- end -}}
 
 {{- if not $ephemeral -}}

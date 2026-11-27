@@ -152,32 +152,14 @@ local function icon_for(code, is_night)
   return sf_icons[key] or sf_icons.cloud
 end
 
-local function update_weather()
-  sbar.exec([[
-    curl -sf --max-time 8 'https://wttr.in/?format=j2&m' 2>/dev/null | jq -r '
-      . as $root |
-      .current_condition[0] as $c |
-      (
-        [
-          $c.temp_C, $c.FeelsLikeC, $c.humidity, $c.windspeedKmph, $c.winddir16Point,
-          $c.uvIndex, $c.weatherCode,
-          ($root.weather[0].astronomy[0].sunrise // ""),
-          ($root.weather[0].astronomy[0].sunset // ""),
-          ($root.weather[0].maxtempC // ""),
-          ($root.weather[0].mintempC // ""),
-          ($root.weather[0].date // ""),
-          ($c.weatherDesc[0].value // ""),
-          ($root.nearest_area[0].areaName[0].value // ""),
-          ($root.nearest_area[0].region[0].value // "")
-        ] | @tsv
-      ),
-      ( $root.weather[] | [.date, .maxtempC, .mintempC, .weatherCode, (.weatherDesc[0].value // "")] | @tsv )
-    '
-  ]], function(output)
-    local lines = {}
-    for line in (tostring(output or ""):gsub("%s+$", "")):gmatch("[^\n]+") do
-      lines[#lines + 1] = line
-    end
+local last_output, last_fetch = nil, 0
+local cache_ttl = 600
+
+local function render_weather(output)
+  local lines = {}
+  for line in (tostring(output or ""):gsub("%s+$", "")):gmatch("[^\n]+") do
+    lines[#lines + 1] = line
+  end
 
     local cur = weather_parse.tsv(lines[1])
 
@@ -231,6 +213,36 @@ local function update_weather()
         },
       })
     end
+end
+
+local function update_weather()
+  if last_output and os.time() - last_fetch < cache_ttl then
+    render_weather(last_output)
+    return
+  end
+  sbar.exec([[
+    curl -sf --max-time 8 'https://wttr.in/?format=j2&m' 2>/dev/null | jq -r '
+      . as $root |
+      .current_condition[0] as $c |
+      (
+        [
+          $c.temp_C, $c.FeelsLikeC, $c.humidity, $c.windspeedKmph, $c.winddir16Point,
+          $c.uvIndex, $c.weatherCode,
+          ($root.weather[0].astronomy[0].sunrise // ""),
+          ($root.weather[0].astronomy[0].sunset // ""),
+          ($root.weather[0].maxtempC // ""),
+          ($root.weather[0].mintempC // ""),
+          ($root.weather[0].date // ""),
+          ($c.weatherDesc[0].value // ""),
+          ($root.nearest_area[0].areaName[0].value // ""),
+          ($root.nearest_area[0].region[0].value // "")
+        ] | @tsv
+      ),
+      ( $root.weather[] | [.date, .maxtempC, .mintempC, .weatherCode, (.weatherDesc[0].value // "")] | @tsv )
+    '
+  ]], function(output)
+    last_output, last_fetch = output, os.time()
+    render_weather(output)
   end)
 end
 

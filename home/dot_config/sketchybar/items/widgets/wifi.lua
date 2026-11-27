@@ -151,7 +151,7 @@ wifi = sbar.add("item", "widgets.wifi.padding", {
 local network_watcher = sbar.add("item", {
   drawing = false,
   updates = true,
-  update_freq = 5,
+  update_freq = 60,
 })
 
 local wifi_bracket = sbar.add("bracket", "widgets.wifi.bracket", {

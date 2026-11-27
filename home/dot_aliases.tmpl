@@ -1,4 +1,4 @@
-{{- $update := "" -}}
+{{- $update := "true" -}}
 {{- if eq .chezmoi.os "darwin" -}}
 {{- $update = "brew update && brew upgrade --greedy && brew upgrade --cask --greedy && brew cleanup" -}}
 {{- else if eq .osid "linux-debian" -}}

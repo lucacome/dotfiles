@@ -31,7 +31,7 @@ defaults write com.apple.dock tilesize -int 42
 defaults write com.apple.dock expose-group-apps -int 1
 defaults write com.apple.dock mru-spaces -int 0
 
-defaults write -g NSGlassDiffusionSetting 1
+defaults write -g NSGlassDiffusionSetting -int 1
 
 # finder
 defaults write com.apple.finder FXPreferredViewStyle -string Nlsv
@@ -45,7 +45,7 @@ defaults write com.apple.finder FinderSpawnTab -int 0
 defaults write NSGlobalDomain AppleSpacesSwitchOnActivate -int 0
 defaults write com.apple.spaces spans-displays -int 1
 
-killall SystemUIServer && killall Dock && killall Finder
+killall SystemUIServer Dock Finder 2>/dev/null || true
 
 # disable spotlight
 defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 64 "<dict><key>enabled</key><false/><key>value</key><dict><key>parameters</key><array><integer>32</integer><integer>49</integer><integer>1048576</integer></array><key>type</key><string>standard</string></dict></dict>"
