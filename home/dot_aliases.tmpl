@@ -38,15 +38,19 @@ ls() {
   emulate -L zsh
   local -a args
   local arg ch
-  local sort_field="" rev=0 sep=0
+  local sort_field="" rev=0 sep=0 have_path=0 grouping=1
   for arg in "$@"; do
     if (( sep )); then
       args+=("$arg")
+      have_path=1
     elif [[ $arg == -- ]]; then
       sep=1
       args+=("--")
     elif [[ $arg == --* ]]; then
       args+=("$arg")
+    elif [[ $arg == -s?* ]]; then
+      args+=("$arg") # eza sort field attached, e.g. -snewest
+      grouping=0
     elif [[ $arg == -?* ]]; then
       for ch in ${(s::)${arg#-}}; do
         case $ch in
@@ -60,22 +64,30 @@ ls() {
       done
     else
       args+=("$arg")
+      have_path=1
     fi
   done
+  # eza prints nothing at all when it has no path and stdout is a pipe, so
+  # `ls | grep foo` would be empty without this.
+  (( have_path )) || args+=(".")
   # eza sorts ascending by default; ls -t/-S mean newest/largest first, so the
   # direction has to be flipped, and a user -r flips it back.
   if [[ -n $sort_field ]]; then
     args+=(-s "$sort_field")
     (( rev )) || args+=(-r)
+    grouping=0 # pinning dirs first fights a time/size sort
   elif (( rev )); then
     args+=(-r)
   fi
-  command eza -g --group-directories-first "${args[@]}"
+  # Defaults; anything the user passes comes after and wins.
+  local -a base=(-g --git --hyperlink=auto --time-style=long-iso --color-scale=size)
+  (( grouping )) && base+=(--group-directories-first)
+  command eza "${base[@]}" "${args[@]}"
 }
-alias la='eza -gla --git --group-directories-first'
-alias ll='eza -gl --git --group-directories-first'
-alias lrt='eza -gl -snewest --git'
-alias lart='eza -gla -snewest --git'
+alias la='ls -gla --git'
+alias ll='ls -gl --git'
+alias lrt='ls -gl -snewest --git'
+alias lart='ls -gla -snewest --git'
 {{- end }}
 {{- if lookPath "gsed" }}
 # GNU core userland for typed commands only. Aliases are not inherited by
