@@ -11,6 +11,10 @@
 export PATH={{ toStrings $paths | join ":" }}:$PATH
 {{- end }}
 
+{{- if not .ephemeral }}
+eval "$(atuin pty-proxy init zsh)"
+{{- end }}
+
 # Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
 
