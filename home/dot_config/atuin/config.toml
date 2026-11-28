@@ -1,32 +1,85 @@
-# Only the settings that differ from Atuin's defaults; see the upstream
-# config.toml for the full list of keys.
+# Atuin config — only settings that differ from the defaults are not commented out.
+# Each setting says what it does and its Atuin default.
 
-auto_sync = true
-update_check = true
-sync_frequency = "10m"
+# Filter mode interactive search starts in: global, host, session, session-preload, directory, workspace.
+# ctrl-r still cycles through the rest.
+# default: "global"
 filter_mode = "session-preload"
-workspaces = true
-show_preview = true
+
+# Use ctrl+0..9 instead of alt+0..9 for the numeric UI shortcuts (handy on macOS).
+# default: false
 ctrl_n_shortcuts = true
-enter_accept = true
+
+# Startup keymap: emacs, vim-normal, vim-insert, auto (auto follows the shell's keymap).
+# default: "emacs"
 keymap_mode = "vim-insert"
+
+# Search mode: prefix, fulltext, fuzzy, daemon-fuzzy. daemon-fuzzy uses the daemon's in-memory index.
+# Requires [daemon] enabled.
+# default: "fuzzy"
+search_mode = "daemon-fuzzy"
+
+# After && or ||, search completes the next command in the chain instead of replacing the line.
+# default: false
+command_chaining = true
+
+# On enter, run the selected command instead of putting it on the prompt (tab still edits).
+# default: false for existing installs (true in new installs' default config)
+enter_accept = true
+
+# Max seconds to establish a connection to the sync server.
+# default: 5
 network_connect_timeout = 10
+
+# Max seconds for any sync-server request to complete.
+# default: 30
 network_timeout = 60
 
 [stats]
+# Commands whose subcommand counts separately in `atuin stats` (git commit vs git).
+# default: apt, cargo, composer, dnf, docker, dotnet, git, go, ip, jj, kubectl, nix, nmcli,
+#          npm, pecl, pnpm, podman, port, systemctl, tmux, yarn
 common_subcommands = [
-    "apt",
-    "git",
-    "docker",
-    "go",
-    "corepack",
-    "tmux",
-    "systemctl",
+    "apt", "docker", "gh", "git", "go", "ip", "helm", "kubectl",
+    "npm", "systemctl", "tmux", "corepack", "yarn",
 ]
 
-[sync]
-records = true
+# Commands left out of `atuin stats` entirely.
+# default: []
+ignored_commands = ["cd", "ls"]
 
 [tmux]
-# Requires tmux >= 3.2; used for the interactive search popup.
+# Open interactive search in a tmux popup. Needs tmux >= 3.2 and zsh/bash/fish.
+# default: false
 enabled = true
+
+# Popup size: percentage or absolute columns/rows.
+# defaults: width = "80%", height = "60%"
+
+[daemon]
+# Run Atuin's background daemon: needed for daemon-fuzzy, threads and output capture.
+# default: false
+enabled = true
+
+# Start/manage the daemon automatically when needed (macOS: a launchd agent).
+# default: false
+autostart = true
+
+[threads]
+# Capture AI agent sessions (Claude Code, Codex, opencode, ...) as searchable, resumable threads.
+# default: false
+enabled = true
+
+# Also capture tool-call arguments and results, with secrets redacted.
+# default: true
+
+[pty_proxy]
+# Re-exec the shell inside `atuin pty-proxy`; required for output capture.
+# default: false
+enabled = true
+
+[ui]
+# Columns in interactive search, left to right (the " > " marker is implicit).
+# Types/widths: duration(5), time(8), datetime(16), directory(20), host(15), user(10), exit(3), command(*).
+# default: ["duration", "time", "command"]
+columns = ["duration", "time", "exit", "command"]
