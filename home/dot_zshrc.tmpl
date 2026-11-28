@@ -1,18 +1,7 @@
-# If you come from bash you might have to change your $PATH.
-{{- $paths := list }}
-{{- $homeDir := .chezmoi.homeDir }}
-{{- range $_, $relPath := list "bin" "go/bin" ".local/bin" }}
-{{    $path := joinPath $homeDir $relPath }}
-{{-   if stat $path }}
-{{-     $paths = mustAppend $paths $path }}
-{{-   end }}
-{{- end }}
-{{- if $paths }}
-export PATH={{ toStrings $paths | join ":" }}:$PATH
-{{- end }}
+# PATH lives in ~/.zshenv so non-interactive shells (ssh, cron, scripts) get it too.
 
 {{- if not .ephemeral }}
-eval "$(atuin pty-proxy init zsh)"
+if command -v atuin >/dev/null; then eval "$(atuin pty-proxy init zsh)"; fi
 {{- end }}
 
 # Path to your oh-my-zsh installation.
@@ -48,6 +37,13 @@ plugins=(
 {{- end }}
 )
 
+# autosuggestions: fall back to completions when history has no match
+ZSH_AUTOSUGGEST_STRATEGY=(history completion)
+ZSH_AUTOSUGGEST_USE_ASYNC=1
+
+# syntax highlighting: bracket matching + cursor shape per keymap
+ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets cursor)
+
 fpath+=${ZSH_CUSTOM:-${ZSH:-~/.oh-my-zsh}/custom}/plugins/zsh-completions/src
 
 source $ZSH/oh-my-zsh.sh
@@ -69,9 +65,7 @@ setopt hist_ignore_all_dups
 setopt hist_save_no_dups
 setopt hist_reduce_blanks
 setopt share_history
-
-export LANG=en_US.UTF-8
-export LC_ALL=en_US.UTF-8
+setopt no_flow_control
 
 bindkey '^ ' autosuggest-accept
 
@@ -83,22 +77,20 @@ export EDITOR=nvim
 export EDITOR=vim
 {{ end -}}
 
-export LANG=en_US.UTF-8
-export LC_ALL=en_US.UTF-8
 export PAGER=less
 
-{{- if eq .chezmoi.os "darwin" }}
-# prefer homebrew versions
-export PATH="/opt/homebrew/bin:$PATH"
-export PATH="/opt/homebrew/opt/curl/bin:$PATH"
-export PATH="/opt/homebrew/opt/openssl@3/bin:$PATH"
-HOMEBREW_COMMAND_NOT_FOUND_HANDLER="$(brew --repository)/Library/Homebrew/command-not-found/handler.sh"
-if [ -f "$HOMEBREW_COMMAND_NOT_FOUND_HANDLER" ]; then
-  source "$HOMEBREW_COMMAND_NOT_FOUND_HANDLER";
-fi
+# Coloured man pages through bat, when both bat and col (for the overstrike cleanup) exist.
+{{- if and (lookPath "col") (or (lookPath "bat") (lookPath "batcat")) }}
+{{-   $bat := "bat" }}{{ if not (lookPath "bat") }}{{ $bat = "batcat" }}{{ end }}
+export MANPAGER="sh -c 'col -bx | {{ $bat }} -l man -p'"
+export MANROFFOPT="-c"
 {{- end }}
 
 # fzf
+export FZF_DEFAULT_OPTS='--height 60% --layout=reverse --border'
+{{- if or (lookPath "bat") (lookPath "batcat") }}
+export FZF_CTRL_T_OPTS="--preview '{{ if lookPath "bat" }}bat{{ else }}batcat{{ end }} --style=numbers --color=always {}'"
+{{- end }}
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
 if command -v wt >/dev/null 2>&1; then eval "$(command wt config shell init zsh)"; fi
@@ -118,14 +110,12 @@ compdef _comp_cdg cdg
 
 zstyle ':omz:plugins:alias-finder' autoload yes
 zstyle ':omz:plugins:alias-finder' exact yes
+zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 
 {{- if not .ephemeral }}
-eval "$(atuin init zsh --disable-up-arrow)"
-eval "$(oh-my-posh init zsh --config ~/.config/oh-my-posh/shell_theme.omp.json)"
-
-function set_poshcontext() {
-    export POSH_HOSTNAME=$(scutil --get ComputerName 2>/dev/null || hostname)
-}
+export POSH_HOSTNAME=${HOST%%.*}
+if command -v atuin >/dev/null; then eval "$(atuin init zsh --disable-up-arrow)"; fi
+if command -v oh-my-posh >/dev/null; then eval "$(oh-my-posh init zsh --config ~/.config/oh-my-posh/shell_theme.omp.json)"; fi
 {{ else }}
 PROMPT="%{$fg[white]%}%n@%{$fg[green]%}%m%{$reset_color%} ${PROMPT}"
 {{ end }}

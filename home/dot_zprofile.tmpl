@@ -1,5 +1,20 @@
-{{ if stat "/opt/homebrew/bin/brew" -}}
-fpath+=("{{ output "/opt/homebrew/bin/brew" "--prefix" | trim }}/share/zsh/site-functions")
+{{- $brew := "" -}}
+{{- if stat "/opt/homebrew/bin/brew" -}}
+{{-   $brew = "/opt/homebrew/bin/brew" -}}
+{{- else if stat "/usr/local/bin/brew" -}}
+{{-   $brew = "/usr/local/bin/brew" -}}
+{{- else -}}
+{{-   $brew = lookPath "brew" -}}
+{{- end -}}
+{{- if $brew -}}
+# No analytics pings
+export HOMEBREW_NO_ANALYTICS=1
 
-eval "$(/opt/homebrew/bin/brew shellenv)"
-{{ end -}}
+fpath+=("{{ dir (dir $brew) }}/share/zsh/site-functions")
+
+eval "$({{ $brew }} shellenv)"
+
+# Prefer homebrew's curl over the system one. curl is keg-only, so this is the
+# only way to get it; openssl comes from the linked prefix already.
+export PATH="$HOMEBREW_PREFIX/opt/curl/bin:$PATH"
+{{- end }}

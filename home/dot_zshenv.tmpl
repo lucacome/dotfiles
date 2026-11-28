@@ -1,0 +1,22 @@
+# Read by every zsh, including non-interactive ones (cron, ssh, scripts).
+# Pure PATH setup: no commands, no output, nothing interactive.
+typeset -U path PATH
+
+{{- $paths := list }}
+{{- $homeDir := .chezmoi.homeDir }}
+{{- range $_, $relPath := list "bin" ".local/bin" "go/bin" }}
+{{-   $path := joinPath $homeDir $relPath }}
+{{-   if stat $path }}
+{{-     $paths = mustAppend $paths $path }}
+{{-   end }}
+{{- end }}
+{{- $paths = mustAppend $paths (joinPath $homeDir ".local/share/mise/shims") }}
+# mise shims last: a fallback for scripts, so interactive shells keep brew/project precedence
+export PATH={{ toStrings $paths | join ":" }}:$PATH
+
+# Locale: en_US.UTF-8 is always present on macOS; Debian-family Linux is not
+# guaranteed to have generated it, but always provides C.UTF-8.
+{{- $locale := "en_US.UTF-8" }}
+{{- if eq .chezmoi.os "linux" }}{{ $locale = "C.UTF-8" }}{{ end }}
+export LANG={{ $locale }}
+export LC_ALL={{ $locale }}

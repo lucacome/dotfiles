@@ -27,9 +27,67 @@ alias cat=batcat
 alias fd=fdfind
 {{- end }}
 {{- if lookPath "eza" }}
-alias ls=eza
-alias la='eza -gla --git'
-alias ll='eza -gl --git'
+# `ls` translates the classic ls letters onto eza so old habits work:
+# t -> sort by mtime, u -> accessed, S -> size; h and G are dropped because
+# eza is already human-readable and coloured and uses -h/-G for header/grid.
+# The group column is always on (-g), in long listings only.
+# `\ls` or `command ls` still runs the system ls. Unalias first: oh-my-zsh
+# already aliases ls to `ls -G`, and an alias beats a function.
+unalias ls 2>/dev/null
+ls() {
+  emulate -L zsh
+  local -a args
+  local arg ch
+  local sort_field="" rev=0 sep=0
+  for arg in "$@"; do
+    if (( sep )); then
+      args+=("$arg")
+    elif [[ $arg == -- ]]; then
+      sep=1
+      args+=("--")
+    elif [[ $arg == --* ]]; then
+      args+=("$arg")
+    elif [[ $arg == -?* ]]; then
+      for ch in ${(s::)${arg#-}}; do
+        case $ch in
+          t) sort_field=time ;;
+          u) sort_field=accessed ;;
+          S) sort_field=size ;;
+          r) rev=1 ;;
+          h|G) ;;
+          *) args+=("-$ch") ;;
+        esac
+      done
+    else
+      args+=("$arg")
+    fi
+  done
+  # eza sorts ascending by default; ls -t/-S mean newest/largest first, so the
+  # direction has to be flipped, and a user -r flips it back.
+  if [[ -n $sort_field ]]; then
+    args+=(-s "$sort_field")
+    (( rev )) || args+=(-r)
+  elif (( rev )); then
+    args+=(-r)
+  fi
+  command eza -g --group-directories-first "${args[@]}"
+}
+alias la='eza -gla --git --group-directories-first'
+alias ll='eza -gl --git --group-directories-first'
 alias lrt='eza -gl -snewest --git'
 alias lart='eza -gla -snewest --git'
+{{- end }}
+{{- if lookPath "gsed" }}
+# GNU core userland for typed commands only. Aliases are not inherited by
+# scripts, so `sed -i ''` and friends keep working inside them. Use \sed to
+# reach the BSD binary interactively.
+alias sed=gsed
+alias grep='ggrep --color=auto'
+alias tar=gtar
+{{- end }}
+{{- if lookPath "gawk" }}
+alias awk=gawk
+{{- end }}
+{{- if lookPath "gunits" }}
+alias units=gunits
 {{- end }}

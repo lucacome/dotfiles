@@ -55,22 +55,28 @@
 {{ if eq .chezmoi.os "darwin" }}		"brew",{{end}}
 		"chezmoi",
 		"docker",
+		"kubectl",
 		"golang",
 		"gh",
 		"zsh-autosuggestions",
-		"zsh-syntax-highlighting",
 		"history",
 		"common-aliases",
 		"zbell",
 {{ if eq .chezmoi.os "darwin" }}		"vscode",{{end}}
 {{ if eq .chezmoi.os "darwin" }}		"gnu-utils",{{end}}
+{{ if eq .chezmoi.os "darwin" }}		"copybuffer",{{end}}
+{{ if eq .chezmoi.os "darwin" }}		"copyfile",{{end}}
 		"ssh",
 		"tailscale",
 		"mise",
 		"command-not-found",
 		"yarn",
 		"alias-finder",
-        "zoxide",
+		"sudo",
+		"extract",
+		"dirhistory",
+		"zoxide",
+		"zsh-syntax-highlighting",
     ]
 
 [git]
